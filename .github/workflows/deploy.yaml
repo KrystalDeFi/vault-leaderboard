@@ -1,3 +1,7 @@
+concurrency:
+  group: 'deploy-leaderboard'
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
