@@ -103,7 +103,7 @@ const Index = () => {
 
       <footer className="text-center mt-8 mb-4">
         <p className="text-[13px] text-gray-500 max-w-[600px] mx-auto px-4">
-          This page is open-sourced & built by the community. Join [repo] to contribute. Have awesome LP tools? [Join our Discord] to request a [x.krystal.app] domain.
+          This page is open-sourced & built by the community. Join [repo] to contribute. Have awesome LP tools? <a href="http://lp.krystal.app/discord" className="text-blue-400 hover:text-blue-300">Join our Discord</a> to request a [x.krystal.app] domain.
         </p>
       </footer>
     </div>
