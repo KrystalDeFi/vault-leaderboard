@@ -1,0 +1,104 @@
+
+import React from 'react';
+import { Vault } from '@/types/vault';
+import ChainBadge from './ChainBadge';
+import RiskBadge from './RiskBadge';
+import StrategyBadge from './StrategyBadge';
+import TokenIcon from './TokenIcon';
+import { Button } from '@/components/ui/button';
+import { formatNumber, formatPercentage, shortenAddress, calculateDaysAgo } from '@/services/api';
+import { Clock, Users } from 'lucide-react';
+
+interface VaultCardProps {
+  vault: Vault;
+  onClick: (vault: Vault) => void;
+}
+
+const VaultCard = ({ vault, onClick }: VaultCardProps) => {
+  return (
+    <div 
+      className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200 p-5 space-y-4"
+      onClick={() => onClick(vault)}
+    >
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div className="space-y-1.5">
+          <h3 className="text-base font-semibold text-white truncate">{vault.name}</h3>
+          <div className="flex items-center gap-2">
+            <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} className="text-white/60" />
+            <span className="text-xs font-medium text-white/60 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              {calculateDaysAgo(vault.ageInSeconds)}
+            </span>
+          </div>
+        </div>
+        <TokenIcon token={vault.principalToken} showSymbol={true} />
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-white/5 px-3 py-2">
+          <div className="text-xs font-medium text-white/50 mb-1">APR</div>
+          <div className="text-sm font-semibold text-white">
+            {formatPercentage(vault.apr)}
+          </div>
+        </div>
+        <div className="rounded-xl bg-white/5 px-3 py-2">
+          <div className="text-xs font-medium text-white/50 mb-1">TVL</div>
+          <div className="text-sm font-semibold text-white">
+            {formatNumber(vault.tvl)}
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-xs font-medium text-white/50 mb-1">PnL</div>
+          <div className={`text-sm font-semibold ${vault.pnl >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+            {vault.pnl >= 0 ? '+' : ''}{formatNumber(vault.pnl)}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-medium text-white/50 mb-1">Fees Generated</div>
+          <div className="text-sm font-semibold text-white">
+            {formatNumber(vault.feeGenerated)}
+          </div>
+        </div>
+      </div>
+
+      {/* Risk & Strategy Tags */}
+      <div className="flex flex-wrap gap-2">
+        <RiskBadge risk={vault.riskScore} className="text-xs font-medium px-3 py-[2px]" />
+        <StrategyBadge strategy={vault.rangeStrategyType} className="text-xs font-medium px-3 py-[2px]" />
+      </div>
+
+      {/* Owner & Users */}
+      <div className="space-y-1">
+        <div className="text-sm text-white/60">
+          {shortenAddress(vault.ownerAddress)}
+        </div>
+        <div className="flex items-center gap-1 text-sm text-white/60">
+          <Users className="w-3.5 h-3.5" />
+          <span>{vault.totalUser} users</span>
+        </div>
+      </div>
+
+      {/* Join Button */}
+      <Button 
+        className={`w-full rounded-full border border-white/10 px-4 py-1 text-sm font-medium text-white/90 hover:border-white/30 hover:text-white bg-transparent ${!vault.allowDeposit && 'opacity-50 cursor-not-allowed'}`}
+        disabled={!vault.allowDeposit}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (vault.allowDeposit) {
+            window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
+          }
+        }}
+      >
+        {vault.allowDeposit ? 'Join vault' : 'Private'}
+      </Button>
+    </div>
+  );
+};
+
+export default VaultCard;

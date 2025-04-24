@@ -1,0 +1,157 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 5%;
+    
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
+    
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 95%;
+    
+    --destructive: 0 0% 30.6%;
+    --destructive-foreground: 0 0% 95%;
+    
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 0 0% 20%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-[#0A0A0A] text-[#e5e5e7] antialiased font-sans;
+  }
+}
+
+@layer components {
+  .vault-card {
+    @apply relative overflow-hidden rounded-xl border border-[#1f1f1f] bg-[#0A0A0A] shadow-sm hover:bg-[#151515] transition-all duration-200;
+  }
+
+  .risk-badge-low {
+    @apply bg-green-500/20 text-green-500;
+  }
+
+  .risk-badge-medium {
+    @apply bg-yellow-500/20 text-yellow-500;
+  }
+  
+  .risk-badge-elevated {
+    @apply bg-yellow-500/20 text-yellow-500;
+  }
+
+  .risk-badge-high {
+    @apply bg-red-500/20 text-red-500;
+  }
+
+  .strategy-badge-wide {
+    @apply bg-blue-500/20 text-blue-500;
+  }
+
+  .strategy-badge-narrow {
+    @apply bg-purple-500/20 text-purple-500;
+  }
+  
+  .unified-table {
+    @apply w-full text-[#e5e5e7] border-collapse;
+  }
+  
+  .unified-table-header {
+    @apply h-12;
+  }
+  
+  .unified-table-header th {
+    @apply text-xs text-[#999] font-semibold uppercase tracking-widest;
+  }
+  
+  .unified-table-row {
+    @apply border-b border-[#1f1f1f] hover:bg-[rgba(255,255,255,0.05)] transition cursor-pointer h-[56px];
+  }
+  
+  .unified-card {
+    @apply border border-[#1f1f1f] rounded-xl bg-[#0A0A0A] p-6 hover:bg-[rgba(255,255,255,0.05)] transition;
+  }
+  
+  .unified-tabs-header {
+    @apply flex space-x-2 bg-transparent border-b border-[#1f1f1f] px-0 mb-1;
+  }
+  
+  .unified-tab {
+    @apply px-5 py-2 rounded-t-md text-base font-semibold tracking-tight text-[#e5e5e7] border-b-2 border-transparent data-[state=active]:text-[#fff] data-[state=active]:border-[#fff] transition focus-visible:outline-none hover:text-[#fff] hover:border-[#666] bg-transparent;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    @apply bg-[#18181b]/80 backdrop-blur-sm border border-[#333];
+  }
+  
+  .neon-glow {
+    @apply shadow-sm;
+  }
+  
+  .soft-gradient {
+    @apply bg-[#0A0A0A];
+  }
+
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(75, 85, 99, 0.3) transparent;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.3);
+    border-radius: 9999px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

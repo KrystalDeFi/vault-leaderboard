@@ -1,0 +1,416 @@
+
+import React, { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Vault, SortOptions, SortField } from "@/types/vault";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber, shortenAddress } from "@/services/api";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import PerformingHeader from "./table/PerformingHeader";
+import { Trophy } from 'lucide-react';
+import TablePagination from "./table/TablePagination";
+import SortHeader from "./table/SortHeader";
+
+interface WeeklyLeaderboardProps {
+  vaults: Vault[];
+  loading: boolean;
+}
+
+const COLUMN_HELP = {
+  fees: "Total Vault/Builder's protocol fees earned (for the selected period).",
+  users: "Total number of users across all vaults by this builder"
+};
+
+const ITEMS_PER_PAGE = 10;
+
+const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
+  const periodOptions = [
+    { value: "this-week", label: "This Week" },
+    { value: "last-week", label: "Last Week" },
+    { value: "all-time", label: "All Time" },
+  ];
+  
+  const [selectedPeriod, setSelectedPeriod] = useState(periodOptions[2].value);
+  const [activeTab, setActiveTab] = useState("performing");
+  const [sortOptions, setSortOptions] = useState<SortOptions>({
+    field: SortField.FEES,
+    direction: 'desc'
+  });
+  
+  const [buildersCurrentPage, setBuildersCurrentPage] = useState(1);
+  const [vaultsCurrentPage, setVaultsCurrentPage] = useState(1);
+
+  const handleSortChange = (field: SortField) => {
+    setSortOptions(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const topPerformingUsers = useMemo(() => {
+    console.log("Sorting builders by:", sortOptions.field, sortOptions.direction);
+    
+    const builderMap = new Map();
+    
+    vaults.forEach(vault => {
+      const builder = vault.owner;
+      const existingBuilder = builderMap.get(builder.address) || {
+        address: builder.address,
+        name: builder.twitterUsername || undefined,
+        avatarUrl: builder.avatarUrl,
+        feesEarned: 0,
+        totalUsers: 0,
+        vaultCount: 0,
+      };
+
+      existingBuilder.feesEarned += vault.feeGenerated;
+      existingBuilder.totalUsers += vault.totalUser;
+      existingBuilder.vaultCount += 1;
+
+      builderMap.set(builder.address, existingBuilder);
+    });
+
+    const users = Array.from(builderMap.values());
+    
+    console.log("Users before sorting:", users.map(u => ({
+      name: u.name || u.address.slice(0, 8),
+      fees: u.feesEarned
+    })));
+    
+    const sortedUsers = users.sort((a, b) => {
+      const multiplier = sortOptions.direction === 'desc' ? -1 : 1;
+      
+      switch (sortOptions.field) {
+        case SortField.FEES:
+          return (a.feesEarned - b.feesEarned) * multiplier;
+        case SortField.USERS:
+          return (a.totalUsers - b.totalUsers) * multiplier;
+        case SortField.VAULTS:
+          return (a.vaultCount - b.vaultCount) * multiplier;
+        default:
+          return (a.feesEarned - b.feesEarned) * multiplier;
+      }
+    });
+
+    console.log("Users after sorting:", sortedUsers.map(u => ({
+      name: u.name || u.address.slice(0, 8),
+      fees: u.feesEarned
+    })));
+    
+    return sortedUsers.map((builder, index) => ({
+      ...builder,
+      rank: index + 1
+    }));
+  }, [vaults, sortOptions]);
+
+  const topVaults = useMemo(() => {
+    console.log("Sorting vaults by:", sortOptions.field, sortOptions.direction);
+    
+    const sortedVaults = [...vaults].sort((a, b) => {
+      const multiplier = sortOptions.direction === 'desc' ? -1 : 1;
+      switch (sortOptions.field) {
+        case SortField.TVL:
+          return (a.tvl - b.tvl) * multiplier;
+        case SortField.APR:
+          return (a.apr - b.apr) * multiplier;
+        case SortField.FEES:
+          return (a.feeGenerated - b.feeGenerated) * multiplier;
+        case SortField.USERS:
+          return (a.totalUser - b.totalUser) * multiplier;
+        default:
+          return (a.feeGenerated - b.feeGenerated) * multiplier;
+      }
+    });
+
+    console.log("Vaults after sorting:", sortedVaults.map(v => ({
+      name: v.name,
+      fees: v.feeGenerated
+    })));
+    
+    return sortedVaults.map((vault, index) => ({
+      ...vault,
+      rank: index + 1
+    }));
+  }, [vaults, sortOptions]);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (buildersCurrentPage - 1) * ITEMS_PER_PAGE;
+    return topPerformingUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [topPerformingUsers, buildersCurrentPage]);
+
+  const paginatedVaults = useMemo(() => {
+    const startIndex = (vaultsCurrentPage - 1) * ITEMS_PER_PAGE;
+    return topVaults.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [topVaults, vaultsCurrentPage]);
+
+  const usersTotalPages = Math.ceil(topPerformingUsers.length / ITEMS_PER_PAGE);
+  const vaultsTotalPages = Math.ceil(topVaults.length / ITEMS_PER_PAGE);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-5xl mx-auto py-8 space-y-8">
+        <Skeleton className="h-12 w-40 mx-auto" />
+        {[1, 2].map((i) => (
+          <Skeleton key={i} className="h-64 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <section className="w-full max-w-5xl mx-auto py-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-y-6 mb-8">
+        <Tabs
+          defaultValue="performing"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full sm:w-auto"
+        >
+          <TabsList
+            className="unified-tabs-header gap-4 min-h-[44px]"
+            style={{ minHeight: 44 }}
+          >
+            <TabsTrigger value="performing" className="unified-tab min-h-[44px] px-5">
+              Top Performing
+            </TabsTrigger>
+            <TabsTrigger value="vaults" className="unified-tab min-h-[44px] px-5">
+              Top Vaults
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex-shrink-0 w-full sm:w-auto mt-6 sm:mt-0 sm:ml-auto">
+          <div className="flex sm:justify-end">
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger className="w-[180px] h-11 min-h-[44px] bg-[#18181b] border border-[#222] rounded-full text-[#e5e5e7] font-medium text-base shadow-none ring-0 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#18181b] border-[#222] z-50">
+                {periodOptions.map((p) => (
+                  <SelectItem
+                    key={p.value}
+                    value={p.value}
+                    className="text-base text-[#e5e5e7] data-[state=selected]:font-bold font-inter"
+                  >
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsContent value="performing" className="animate-fade-in mt-4">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-2">
+            <table className="unified-table w-full">
+              <thead>
+                <tr className="unified-table-header">
+                  <th className="w-12 text-left pl-6 font-semibold text-xs text-[#999] tracking-widest uppercase">
+                    #
+                  </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase">
+                    Builder
+                  </th>
+                  <PerformingHeader
+                    field={SortField.FEES}
+                    label="Fee Generated"
+                    helpText={COLUMN_HELP.fees}
+                    sortOptions={sortOptions}
+                    onSortChange={handleSortChange}
+                  />
+                  <PerformingHeader
+                    field={SortField.USERS}
+                    label="Total Users"
+                    helpText={COLUMN_HELP.users}
+                    sortOptions={sortOptions}
+                    onSortChange={handleSortChange}
+                  />
+                  <PerformingHeader
+                    field={SortField.VAULTS}
+                    label="Vaults"
+                    sortOptions={sortOptions}
+                    onSortChange={handleSortChange}
+                  />
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedUsers.map((user) => {
+                  const isTop3 = user.rank <= 3;
+                  return (
+                    <tr
+                      key={user.address}
+                      className={`
+                        unified-table-row
+                        ${isTop3 ? "font-bold text-white" : ""}
+                      `}
+                    >
+                      <td className="pl-6 pr-2 py-2 align-middle min-w-[48px]">
+                        {isTop3 ? (
+                          <span className="bg-[#18181b] rounded-full w-9 h-9 flex items-center justify-center mr-2">
+                            <Trophy
+                              className={`
+                                w-5 h-5
+                                ${user.rank === 1 && "text-[#FFE567]"}
+                                ${user.rank === 2 && "text-[#B4B6BC]"}
+                                ${user.rank === 3 && "text-[#FFAD7D]"}
+                              `}
+                            />
+                          </span>
+                        ) : (
+                          <span className="font-mono text-base text-[#999] pl-2 font-semibold">
+                            {user.rank}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-2 min-w-[160px]">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8 border border-[#222] bg-[#131313]">
+                            {user.avatarUrl ? (
+                              <AvatarImage src={user.avatarUrl} alt={user.name || shortenAddress(user.address)} />
+                            ) : (
+                              <AvatarFallback className="text-sm font-bold text-[#fff] uppercase">
+                                {user.name?.[0] ?? user.address.slice(2, 4)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-[#fff] text-base block max-w-[120px] truncate font-inter">
+                              {user.name || shortenAddress(user.address)}
+                            </span>
+                            <span className="text-xs text-[#999] font-mono truncate">
+                              {shortenAddress(user.address)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-right pr-2 py-2 min-w-[100px] font-medium">
+                        {formatNumber(user.feesEarned || 0)}
+                      </td>
+                      <td className="text-right pr-2 py-2 min-w-[80px] font-medium">
+                        {Math.round(user.totalUsers)}
+                      </td>
+                      <td className="text-right pr-6 py-2 min-w-[70px] font-medium">
+                        {user.vaultCount}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-4">
+            <TablePagination
+              currentPage={buildersCurrentPage}
+              totalPages={usersTotalPages}
+              setCurrentPage={setBuildersCurrentPage}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="vaults" className="animate-fade-in mt-4">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-2">
+            <table className="unified-table w-full">
+              <thead>
+                <tr className="unified-table-header">
+                  <th className="w-12 text-left pl-6 font-semibold text-xs text-[#999] tracking-widest uppercase">
+                    #
+                  </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase">
+                    Vault
+                  </th>
+                  <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedVaults.map((vault) => {
+                  const isTop3 = vault.rank <= 3;
+                  return (
+                    <tr
+                      key={vault.vaultAddress}
+                      className={`
+                        unified-table-row
+                        ${isTop3 ? "font-bold text-white" : ""}
+                      `}
+                      tabIndex={0}
+                      style={{
+                        fontSize: "1rem",
+                        minHeight: 56,
+                        height: 56,
+                        fontWeight: isTop3 ? 700 : 500,
+                      }}
+                      aria-label={`View vault ${vault.name || vault.vaultAddress}`}
+                    >
+                      <td className="pl-6 pr-2 py-2 align-middle min-w-[48px]">
+                        <span className="flex items-center justify-between">
+                          {isTop3 ? (
+                            <span className={`
+                              bg-[#18181b]
+                              rounded-full
+                              w-9 h-9 flex items-center justify-center
+                              mr-2
+                            `}>
+                              <Trophy
+                                className={`
+                                  w-5 h-5
+                                  ${vault.rank === 1 && "text-[#FFE567]"}
+                                  ${vault.rank === 2 && "text-[#B4B6BC]"}
+                                  ${vault.rank === 3 && "text-[#FFAD7D]"}
+                                `}
+                              />
+                            </span>
+                          ) : (
+                            <span
+                              className="font-mono text-base text-[#999] pl-2"
+                              style={{ fontWeight: 600 }}
+                            >
+                              {vault.rank}
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-2 min-w-[160px]">
+                        <div className="font-semibold text-[#fff] text-base max-w-[120px] truncate font-inter">
+                          {vault.name}
+                        </div>
+                        <div className="mt-1 text-xs text-[#999] font-mono truncate">
+                          {shortenAddress(vault.vaultAddress)}
+                        </div>
+                      </td>
+                      <td className="text-right pr-4 py-2 min-w-[90px] font-medium">
+                        {formatNumber(vault.feeGenerated || 0)}
+                      </td>
+                      <td className="text-right pr-4 py-2 min-w-[90px] font-medium">
+                        {formatNumber(vault.tvl || 0)}
+                      </td>
+                      <td className="text-right pr-4 py-2 min-w-[80px] font-medium">
+                        {(vault.apr * 100).toFixed(2)}%
+                      </td>
+                      <td className="text-right pr-6 py-2 min-w-[70px] font-medium">
+                        {Math.round(vault.totalUser)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-4">
+            <TablePagination
+              currentPage={vaultsCurrentPage}
+              totalPages={vaultsTotalPages}
+              setCurrentPage={setVaultsCurrentPage}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </section>
+  );
+};
+
+export default WeeklyLeaderboard;
