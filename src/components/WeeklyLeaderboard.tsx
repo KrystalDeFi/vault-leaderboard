@@ -1,15 +1,45 @@
+import React, {
+  useMemo,
+  useState,
+} from 'react';
 
-import React, { useState, useMemo } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Vault, SortOptions, SortField } from "@/types/vault";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatNumber, shortenAddress } from "@/services/api";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import PerformingHeader from "./table/PerformingHeader";
-import { Trophy } from 'lucide-react';
-import TablePagination from "./table/TablePagination";
-import SortHeader from "./table/SortHeader";
+import {
+  Trophy,
+  Twitter,
+} from 'lucide-react';
+
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  formatNumber,
+  shortenAddress,
+} from '@/services/api';
+import {
+  SortField,
+  SortOptions,
+  Vault,
+} from '@/types/vault';
+
+import PerformingHeader from './table/PerformingHeader';
+import SortHeader from './table/SortHeader';
+import TablePagination from './table/TablePagination';
 
 interface WeeklyLeaderboardProps {
   vaults: Vault[];
@@ -54,9 +84,15 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     
     vaults.forEach(vault => {
       const builder = vault.owner;
+      console.log('Builder data:', {
+        address: builder.address,
+        twitterUsername: builder.twitterUsername,
+        name: builder.twitterUsername || undefined
+      });
       const existingBuilder = builderMap.get(builder.address) || {
         address: builder.address,
         name: builder.twitterUsername || undefined,
+        twitterUsername: builder.twitterUsername,
         avatarUrl: builder.avatarUrl,
         feesEarned: 0,
         totalUsers: 0,
@@ -145,6 +181,14 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
   const usersTotalPages = Math.ceil(topPerformingUsers.length / ITEMS_PER_PAGE);
   const vaultsTotalPages = Math.ceil(topVaults.length / ITEMS_PER_PAGE);
+
+  const handleUserRowClick = (address: string) => {
+    window.open(`https://defi.krystal.app/account/${address}/positions?tab=Vaults#owned_vaults`, '_blank');
+  };
+
+  const handleVaultRowClick = (vault: Vault) => {
+    window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
+  };
 
   if (loading) {
     return (
@@ -243,7 +287,11 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       className={`
                         unified-table-row
                         ${isTop3 ? "font-bold text-white" : ""}
+                        cursor-pointer hover:bg-[#1a1a1a] transition-colors
                       `}
+                      onClick={() => handleUserRowClick(user.address)}
+                      tabIndex={0}
+                      aria-label={`View builder ${user.name || user.address}`}
                     >
                       <td className="pl-6 pr-2 py-2 align-middle min-w-[48px]">
                         {isTop3 ? (
@@ -265,7 +313,17 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       </td>
                       <td className="py-2 pr-2 min-w-[160px]">
                         <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8 border border-[#222] bg-[#131313]">
+                          <Avatar 
+                            className="w-8 h-8 border border-[#222] bg-[#131313] cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (user.avatarUrl && user.twitterUsername) {
+                                window.open(`https://x.com/${user.twitterUsername}`, '_blank');
+                              } else {
+                                handleUserRowClick(user.address);
+                              }
+                            }}
+                          >
                             {user.avatarUrl ? (
                               <AvatarImage src={user.avatarUrl} alt={user.name || shortenAddress(user.address)} />
                             ) : (
@@ -275,9 +333,23 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                             )}
                           </Avatar>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[#fff] text-base block max-w-[120px] truncate font-inter">
-                              {user.name || shortenAddress(user.address)}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-[#fff] text-base truncate font-inter">
+                                {user.name || shortenAddress(user.address)}
+                              </span>
+                              {user.twitterUsername && (
+                                <a
+                                  href={`https://x.com/${user.twitterUsername}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded-full hover:bg-white/5 transition-colors inline-flex items-center justify-center"
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label={`View ${user.name || user.address} on X`}
+                                >
+                                  <Twitter className="w-3.5 h-3.5 text-white/60" />
+                                </a>
+                              )}
+                            </div>
                             <span className="text-xs text-[#999] font-mono truncate">
                               {shortenAddress(user.address)}
                             </span>
@@ -335,7 +407,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       className={`
                         unified-table-row
                         ${isTop3 ? "font-bold text-white" : ""}
+                        cursor-pointer hover:bg-[#1a1a1a] transition-colors
                       `}
+                      onClick={() => handleVaultRowClick(vault)}
                       tabIndex={0}
                       style={{
                         fontSize: "1rem",
@@ -373,8 +447,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                           )}
                         </span>
                       </td>
-                      <td className="py-2 pr-2 min-w-[160px]">
-                        <div className="font-semibold text-[#fff] text-base max-w-[120px] truncate font-inter">
+                      <td className="py-2 pr-2 min-w-[200px]">
+                        <div className="font-semibold text-[#fff] text-base max-w-[180px] truncate font-inter">
                           {vault.name}
                         </div>
                         <div className="mt-1 text-xs text-[#999] font-mono truncate">
