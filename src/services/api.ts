@@ -10,7 +10,7 @@ type FetchVaultsOptions = {
 export const fetchVaults = async (options: FetchVaultsOptions = {}): Promise<VaultResponse> => {
   const {
     category = 'ALL_VAULT',
-    userAddress = '0x1822946a4f1a625044d93a468db6db756d4f89ff',
+    userAddress = '',
   } = options;
 
   const queryParams = new URLSearchParams({
