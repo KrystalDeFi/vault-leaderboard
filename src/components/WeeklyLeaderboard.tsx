@@ -142,7 +142,14 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const topVaults = useMemo(() => {
     console.log("Sorting vaults by:", sortOptions.field, sortOptions.direction);
     
-    const sortedVaults = [...vaults].sort((a, b) => {
+    // Create a Map to ensure unique vaults by vaultAddress
+    const uniqueVaultsMap = new Map();
+    vaults.forEach(vault => {
+      uniqueVaultsMap.set(vault.vaultAddress, vault);
+    });
+    
+    // Convert back to array and sort
+    const sortedVaults = Array.from(uniqueVaultsMap.values()).sort((a, b) => {
       const multiplier = sortOptions.direction === 'desc' ? -1 : 1;
       switch (sortOptions.field) {
         case SortField.TVL:
@@ -160,7 +167,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
     console.log("Vaults after sorting:", sortedVaults.map(v => ({
       name: v.name,
-      fees: v.feeGenerated
+      address: v.vaultAddress,
+      tvl: v.tvl
     })));
     
     return sortedVaults.map((vault, index) => ({
@@ -272,7 +280,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   />
                   <PerformingHeader
                     field={SortField.VAULTS}
-                    label="Vaults"
+                    label="Active Vaults"
                     sortOptions={sortOptions}
                     onSortChange={handleSortChange}
                   />
