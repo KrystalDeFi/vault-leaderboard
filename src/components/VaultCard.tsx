@@ -1,24 +1,37 @@
-
 import React from 'react';
+
+import {
+  Clock,
+  Users,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import {
+  calculateDaysAgo,
+  formatNumber,
+  formatPercentage,
+  shortenAddress,
+} from '@/services/api';
 import { Vault } from '@/types/vault';
+
 import ChainBadge from './ChainBadge';
 import RiskBadge from './RiskBadge';
 import StrategyBadge from './StrategyBadge';
 import TokenIcon from './TokenIcon';
-import { Button } from '@/components/ui/button';
-import { formatNumber, formatPercentage, shortenAddress, calculateDaysAgo } from '@/services/api';
-import { Clock, Users } from 'lucide-react';
 
 interface VaultCardProps {
   vault: Vault;
   onClick: (vault: Vault) => void;
+  onJoinClick: (e: React.MouseEvent) => void;
 }
 
-const VaultCard = ({ vault, onClick }: VaultCardProps) => {
+const VaultCard = ({ vault, onClick, onJoinClick }: VaultCardProps) => {
+  const vaultUrl = `https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`;
+
   return (
     <div 
-      className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200 p-5 space-y-4"
-      onClick={() => onClick(vault)}
+      className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200 p-5 space-y-3 cursor-pointer"
+      onClick={() => window.open(vaultUrl, '_blank')}
     >
       {/* Header */}
       <div className="flex justify-between items-start">
@@ -84,19 +97,19 @@ const VaultCard = ({ vault, onClick }: VaultCardProps) => {
         </div>
       </div>
 
-      {/* Join Button */}
-      <Button 
-        className={`w-full rounded-full border border-white/10 px-4 py-1 text-sm font-medium text-white/90 hover:border-white/30 hover:text-white bg-transparent ${!vault.allowDeposit && 'opacity-50 cursor-not-allowed'}`}
-        disabled={!vault.allowDeposit}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (vault.allowDeposit) {
-            window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
-          }
-        }}
-      >
-        {vault.allowDeposit ? 'Join vault' : 'Private'}
-      </Button>
+      {/* Action Button */}
+      <div>
+        <Button 
+          className="w-full rounded-full border border-white/10 px-4 py-1 text-sm font-medium text-white/90 hover:border-white/30 hover:text-white bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!vault.allowDeposit}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(vaultUrl, '_blank');
+          }}
+        >
+          {vault.allowDeposit ? 'Join' : 'Private'}
+        </Button>
+      </div>
     </div>
   );
 };

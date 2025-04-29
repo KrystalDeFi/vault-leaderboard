@@ -7,31 +7,33 @@ type FetchVaultsOptions = {
   userAddress?: string;
 };
 
-export const fetchVaults = async (options: FetchVaultsOptions = {}): Promise<VaultResponse> => {
-  const {
-    category = 'ALL_VAULT',
-    userAddress = '',
-  } = options;
-
-  const queryParams = new URLSearchParams({
-    perPage: '2000',
-    category,
-    userAddress,
-  });
-
+export async function fetchVaults(category = 'ALL_VAULT', userAddress?: string): Promise<VaultResponse> {
   try {
-    const response = await fetch(`${API_BASE_URL}?${queryParams.toString()}`);
-    
+    const queryParams = new URLSearchParams({
+      perPage: '2000',
+      category: category
+    });
+    if (userAddress) queryParams.set('userAddress', userAddress);
+
+    const response = await fetch(`${API_BASE_URL}?${queryParams}`);
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      throw new Error('Failed to fetch vaults');
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API Response - Raw Vaults:', data.data.map(v => ({
+      name: v.name,
+      chainId: v.chainId,
+      vaultAddress: v.vaultAddress,
+      chainName: v.chainName
+    })));
+    
+    return data;
   } catch (error) {
-    console.error('Error fetching vault data:', error);
+    console.error('Error fetching vaults:', error);
     throw error;
   }
-};
+}
 
 export const formatNumber = (num: number, digits = 2): string => {
   if (num === undefined || num === null) return '0';

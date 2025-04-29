@@ -1,8 +1,13 @@
+import React, { useEffect } from 'react';
 
-import React from 'react';
-import { Vault, SortOptions, SortField } from '@/types/vault';
-import TablePagination from './table/TablePagination';
+import {
+  SortField,
+  SortOptions,
+  Vault,
+} from '@/types/vault';
+
 import SortHeader from './table/SortHeader';
+import TablePagination from './table/TablePagination';
 import VaultTableRow from './table/VaultTableRow';
 
 interface VaultTableProps {
@@ -16,6 +21,11 @@ const ITEMS_PER_PAGE = 10;
 
 const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTableProps) => {
   const [currentPage, setCurrentPage] = React.useState(1);
+
+  // Reset pagination when vaults data or sort options change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vaults, sortOptions.field, sortOptions.direction]);
 
   const paginatedVaults = React.useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -33,23 +43,32 @@ const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTa
         <table className="w-full text-sm">
           <thead className="bg-[#121212]">
             <tr>
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Vault</th>
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Chain</th>
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Principal</th>
-              <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={onSortChange} />
-              <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={onSortChange} />
-              <SortHeader field={SortField.PNL} label="PnL" sortOptions={sortOptions} onSortChange={onSortChange} />
-              <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={onSortChange} />
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Strategy</th>
-              <SortHeader field={SortField.RISK} label="Risk" sortOptions={sortOptions} onSortChange={onSortChange} />
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Owner</th>
-              <th className="px-5 py-3 text-left font-medium text-sm text-white/60">Action</th>
+              <th className="w-[200px] px-5 py-3 text-left font-medium text-sm text-white/60">Vault</th>
+              <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Chain</th>
+              <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Principal</th>
+              <th className="w-[100px] px-5 py-3 text-right font-medium text-sm text-white/60">
+                <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={onSortChange} />
+              </th>
+              <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
+                <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={onSortChange} />
+              </th>
+              <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
+                <SortHeader field={SortField.PNL} label="PnL" sortOptions={sortOptions} onSortChange={onSortChange} />
+              </th>
+              <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
+                <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={onSortChange} />
+              </th>
+              <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Strategy</th>
+              <th className="w-[100px] px-5 py-3 text-center font-medium text-sm text-white/60">
+                <SortHeader field={SortField.RISK} label="Risk" sortOptions={sortOptions} onSortChange={onSortChange} />
+              </th>
+              <th className="w-[140px] px-5 py-3 text-left font-medium text-sm text-white/60">Owner</th>
             </tr>
           </thead>
           <tbody>
             {paginatedVaults.map(vault => (
               <VaultTableRow 
-                key={vault.vaultAddress} 
+                key={`${vault.chainId}-${vault.vaultAddress}`}
                 vault={vault} 
                 onVaultClick={onVaultClick} 
               />

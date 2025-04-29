@@ -1,15 +1,30 @@
-
 import React, { useState } from 'react';
-import { FilterOptions } from '@/types/vault';
-import { Input } from '@/components/ui/input';
+
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FilterOptions } from '@/types/vault';
 
 interface FilterBarProps {
   filterOptions: FilterOptions;
@@ -17,11 +32,13 @@ interface FilterBarProps {
   className?: string;
 }
 
-const RISK_OPTIONS = [
-  { value: 'LOW', label: 'Low Risk' },
-  { value: 'MEDIUM', label: 'Medium Risk' },
-  { value: 'ELEVATED', label: 'Elevated Risk' },
-  { value: 'HIGH', label: 'High Risk' },
+const CHAINS = [
+  { id: 1, name: 'Ethereum' },
+  { id: 56, name: 'BNB Chain' },
+  { id: 137, name: 'Polygon' },
+  { id: 42161, name: 'Arbitrum' },
+  { id: 10, name: 'Optimism' },
+  { id: 8453, name: 'Base' },
 ];
 
 const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps) => {
@@ -35,9 +52,11 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
     setAprRange([value[0] / 100, null]);
   };
 
-  const handleFilterUpdate = (key: keyof FilterOptions, value: any) => {
-    const newFilters = { ...filterOptions, [key]: value };
-    onFilterChange(newFilters);
+  const handleFilterUpdate = (key: keyof FilterOptions, value: FilterOptions[keyof FilterOptions]) => {
+    onFilterChange({
+      ...filterOptions,
+      [key]: value,
+    });
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,40 +73,40 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
       rangeStrategy: null,
       allowDeposit: null,
       search: '',
+      chainId: null,
     };
     onFilterChange(resetFilters);
     setAprRange([null, null]);
   };
 
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (filterOptions.principalToken) count++;
-    if (filterOptions.riskLevel) count++;
-    if (filterOptions.minAPR) count++;
-    if (filterOptions.tvlRange) count++;
-    if (filterOptions.rangeStrategy) count++;
-    if (filterOptions.allowDeposit !== null) count++;
-    return count;
-  };
-
-  const activeFilterCount = getActiveFilterCount();
+  const activeFilterCount = Object.entries(filterOptions).filter(([key, value]) => {
+    if (key === 'search') return value !== '';
+    return value !== null;
+  }).length;
 
   return (
     <div className={cn("mb-6", className)}>
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
-        <div className="w-full md:max-w-[600px] md:mx-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+        <div className="w-full max-w-[720px]">
+          <div className="relative flex items-center">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 w-4 h-4 pointer-events-none" />
             <Input
-              placeholder="Search by token, pool, or vault name"
-              className="pl-10 bg-[rgba(255,255,255,0.05)] border-white/10 rounded-xl px-4 py-[10px] w-full text-sm placeholder:text-white/50 focus:ring-2 focus:ring-white/10 focus:outline-none"
+              placeholder="Search by token, pool or vault name"
+              className={cn(
+                "h-11 pl-11 pr-4 bg-[rgba(255,255,255,0.05)]",
+                "border-white/10 rounded-xl",
+                "w-full text-sm",
+                "placeholder:text-white/50",
+                "focus:ring-2 focus:ring-white/10 focus:outline-none",
+                "transition-colors"
+              )}
               value={filterOptions.search}
               onChange={handleSearchChange}
             />
           </div>
         </div>
 
-        <div className="ml-auto">
+        <div>
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -106,22 +125,29 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-[320px] p-5 rounded-2xl bg-[#0D0D0D] border border-white/10 shadow-xl"
-              align="end"
-            >
+            <PopoverContent className="w-80 bg-[#0D0D0D] border-white/10 p-4 space-y-4">
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-medium tracking-wide uppercase text-white/60">Filter Options</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearFilters} 
-                    className="h-8 gap-1 text-xs hover:bg-white/5 text-white/60 hover:text-white/80"
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Chain</Label>
+                  <Select
+                    value={filterOptions.chainId?.toString() || "none"}
+                    onValueChange={(value) => {
+                      const chainId = value === "none" ? null : Number(value);
+                      handleFilterUpdate('chainId', chainId);
+                    }}
                   >
-                    <X className="w-3.5 h-3.5" />
-                    Clear All
-                  </Button>
+                    <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
+                      <SelectValue placeholder="All chains" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0D0D0D] border-white/10">
+                      <SelectItem value="none">All chains</SelectItem>
+                      {CHAINS.map((chain) => (
+                        <SelectItem key={chain.id} value={chain.id.toString()}>
+                          {chain.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -136,6 +162,8 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                     <SelectContent className="bg-[#0D0D0D] border-white/10">
                       <SelectItem value="none">Any token</SelectItem>
                       <SelectItem value="USDC">USDC</SelectItem>
+                      <SelectItem value="USDT">USDT</SelectItem>
+                      <SelectItem value="DAI">DAI</SelectItem>
                       <SelectItem value="WETH">WETH</SelectItem>
                       <SelectItem value="WBTC">WBTC</SelectItem>
                     </SelectContent>
@@ -145,24 +173,18 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                 <div className="space-y-2">
                   <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Risk Level</Label>
                   <Select
-                    value={filterOptions.riskLevel || 'all_risks'}
-                    onValueChange={(value) => 
-                      onFilterChange({
-                        ...filterOptions,
-                        riskLevel: value === 'all_risks' ? null : value
-                      })
-                    }
+                    value={filterOptions.riskLevel || "none"}
+                    onValueChange={(value) => handleFilterUpdate('riskLevel', value === "none" ? null : value)}
                   >
                     <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
-                      <SelectValue placeholder="Risk Level" />
+                      <SelectValue placeholder="Any risk level" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0D0D0D] border-white/10">
-                      <SelectItem value="all_risks">All Risks</SelectItem>
-                      {RISK_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="none">Any risk level</SelectItem>
+                      <SelectItem value="LOW">Low</SelectItem>
+                      <SelectItem value="MEDIUM">Medium</SelectItem>
+                      <SelectItem value="ELEVATED">Elevated</SelectItem>
+                      <SelectItem value="HIGH">High</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -191,13 +213,13 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                     onValueChange={(value) => handleFilterUpdate('tvlRange', value === "none" ? null : value)}
                   >
                     <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
-                      <SelectValue placeholder="Any TVL" />
+                      <SelectValue placeholder="Any TVL range" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#0D0D0D] border-white/10">
-                      <SelectItem value="none">Any TVL</SelectItem>
-                      <SelectItem value="low">Low (&lt; $10K)</SelectItem>
-                      <SelectItem value="medium">Medium ($10K - $100K)</SelectItem>
-                      <SelectItem value="high">High (&gt; $100K)</SelectItem>
+                      <SelectItem value="none">Any TVL range</SelectItem>
+                      <SelectItem value="low">Low (&lt; $10k)</SelectItem>
+                      <SelectItem value="medium">Medium ($10k - $100k)</SelectItem>
+                      <SelectItem value="high">High (&gt; $100k)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -247,6 +269,15 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
 
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-2">
+          {filterOptions.chainId && (
+            <div className="bg-white/5 rounded-full px-3 py-1 text-xs flex items-center gap-1 text-white/90">
+              Chain: {CHAINS.find(chain => chain.id === filterOptions.chainId)?.name}
+              <X 
+                className="w-3 h-3 ml-1 cursor-pointer text-white/50 hover:text-white/80" 
+                onClick={() => handleFilterUpdate('chainId', null)} 
+              />
+            </div>
+          )}
           {filterOptions.principalToken && (
             <div className="bg-white/5 rounded-full px-3 py-1 text-xs flex items-center gap-1 text-white/90">
               Token: {filterOptions.principalToken}
