@@ -148,6 +148,7 @@ export interface FilterOptions {
   rangeStrategy: string | null;
   allowDeposit: boolean | null;
   search: string;
+  chainId: number | null;
 }
 
 export enum SortField {
