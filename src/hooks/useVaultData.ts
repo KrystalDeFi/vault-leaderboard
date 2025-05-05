@@ -104,6 +104,10 @@ export function useFilteredAndSortedVaults(
           valueA = a.feeGenerated || 0;
           valueB = b.feeGenerated || 0;
           break;
+        case SortField.USERS:
+          valueA = a.totalUser || 0;
+          valueB = b.totalUser || 0;
+          break;
         default:
           valueA = a.apr || 0;
           valueB = b.apr || 0;

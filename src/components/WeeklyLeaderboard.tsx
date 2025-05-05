@@ -27,16 +27,19 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { useFilteredAndSortedVaults } from '@/hooks/useVaultData';
 import {
   formatNumber,
   shortenAddress,
 } from '@/services/api';
 import {
+  FilterOptions,
   SortField,
   SortOptions,
   Vault,
 } from '@/types/vault';
 
+import ChainBadge from './ChainBadge';
 import PerformingHeader from './table/PerformingHeader';
 import SortHeader from './table/SortHeader';
 import TablePagination from './table/TablePagination';
@@ -66,6 +69,17 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     field: SortField.FEES,
     direction: 'desc'
   });
+  const [filterOptions] = useState<FilterOptions>({
+    principalToken: null,
+    riskLevel: null,
+    minAPR: null,
+    maxAPR: null,
+    tvlRange: null,
+    rangeStrategy: null,
+    allowDeposit: null,
+    search: '',
+    chainId: null,
+  });
   
   const [buildersCurrentPage, setBuildersCurrentPage] = useState(1);
   const [vaultsCurrentPage, setVaultsCurrentPage] = useState(1);
@@ -76,6 +90,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
       direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
     }));
   };
+
+  const filteredAndSortedVaults = useFilteredAndSortedVaults(vaults, filterOptions, sortOptions);
 
   const topPerformingUsers = useMemo(() => {
     console.log("Sorting builders by:", sortOptions.field, sortOptions.direction);
@@ -139,44 +155,6 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     }));
   }, [vaults, sortOptions]);
 
-  const topVaults = useMemo(() => {
-    console.log("Sorting vaults by:", sortOptions.field, sortOptions.direction);
-    
-    // Create a Map to ensure unique vaults by vaultAddress
-    const uniqueVaultsMap = new Map();
-    vaults.forEach(vault => {
-      uniqueVaultsMap.set(vault.vaultAddress, vault);
-    });
-    
-    // Convert back to array and sort
-    const sortedVaults = Array.from(uniqueVaultsMap.values()).sort((a, b) => {
-      const multiplier = sortOptions.direction === 'desc' ? -1 : 1;
-      switch (sortOptions.field) {
-        case SortField.TVL:
-          return (a.tvl - b.tvl) * multiplier;
-        case SortField.APR:
-          return (a.apr - b.apr) * multiplier;
-        case SortField.FEES:
-          return (a.feeGenerated - b.feeGenerated) * multiplier;
-        case SortField.USERS:
-          return (a.totalUser - b.totalUser) * multiplier;
-        default:
-          return (a.feeGenerated - b.feeGenerated) * multiplier;
-      }
-    });
-
-    console.log("Vaults after sorting:", sortedVaults.map(v => ({
-      name: v.name,
-      address: v.vaultAddress,
-      tvl: v.tvl
-    })));
-    
-    return sortedVaults.map((vault, index) => ({
-      ...vault,
-      rank: index + 1
-    }));
-  }, [vaults, sortOptions]);
-
   const paginatedUsers = useMemo(() => {
     const startIndex = (buildersCurrentPage - 1) * ITEMS_PER_PAGE;
     return topPerformingUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -184,11 +162,14 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
   const paginatedVaults = useMemo(() => {
     const startIndex = (vaultsCurrentPage - 1) * ITEMS_PER_PAGE;
-    return topVaults.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [topVaults, vaultsCurrentPage]);
+    return filteredAndSortedVaults.slice(startIndex, startIndex + ITEMS_PER_PAGE).map((vault, idx) => ({
+      ...vault,
+      rank: startIndex + idx + 1,
+    }));
+  }, [filteredAndSortedVaults, vaultsCurrentPage]);
 
   const usersTotalPages = Math.ceil(topPerformingUsers.length / ITEMS_PER_PAGE);
-  const vaultsTotalPages = Math.ceil(topVaults.length / ITEMS_PER_PAGE);
+  const vaultsTotalPages = Math.ceil(filteredAndSortedVaults.length / ITEMS_PER_PAGE);
 
   const handleUserRowClick = (address: string) => {
     window.open(`https://defi.krystal.app/account/${address}/positions?tab=Vaults#owned_vaults`, '_blank');
@@ -390,20 +371,39 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
         </TabsContent>
 
         <TabsContent value="vaults" className="animate-fade-in mt-4">
-          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-2">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-0 overflow-hidden">
             <table className="unified-table w-full">
               <thead>
                 <tr className="unified-table-header">
                   <th className="w-12 text-left pl-6 font-semibold text-xs text-[#999] tracking-widest uppercase">
                     #
                   </th>
-                  <th className="text-left text-xs text-[#999] font-semibold uppercase">
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">
                     Vault
                   </th>
-                  <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
-                  <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
-                  <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
-                  <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">
+                    Chain
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.FEES ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.TVL ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[100px] pr-4 ${sortOptions.field === SortField.APR ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[100px] pr-6 ${sortOptions.field === SortField.USERS ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -411,11 +411,12 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   const isTop3 = vault.rank <= 3;
                   return (
                     <tr
-                      key={vault.vaultAddress}
+                      key={`${vault.chainId}-${vault.vaultAddress}`}
                       className={`
                         unified-table-row
                         ${isTop3 ? "font-bold text-white" : ""}
                         cursor-pointer hover:bg-[#1a1a1a] transition-colors
+                        w-full
                       `}
                       onClick={() => handleVaultRowClick(vault)}
                       tabIndex={0}
@@ -455,24 +456,31 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                           )}
                         </span>
                       </td>
-                      <td className="py-2 pr-2 min-w-[200px]">
-                        <div className="font-semibold text-[#fff] text-base max-w-[180px] truncate font-inter">
-                          {vault.name}
-                        </div>
-                        <div className="mt-1 text-xs text-[#999] font-mono truncate">
-                          {shortenAddress(vault.vaultAddress)}
+                      <td className="py-2 pl-2 pr-2 min-w-[240px]">
+                        <div className="flex flex-col">
+                          <div className="font-semibold text-[#fff] text-base max-w-[240px] truncate font-inter">
+                            {vault.name}
+                          </div>
+                          <div className="mt-1 text-xs text-[#999] font-mono truncate">
+                            {shortenAddress(vault.vaultAddress)}
+                          </div>
                         </div>
                       </td>
-                      <td className="text-right pr-4 py-2 min-w-[90px] font-medium">
+                      <td className="py-2 pl-2 pr-2 w-[60px]">
+                        <div className="flex items-center">
+                          <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
+                        </div>
+                      </td>
+                      <td className="text-right w-[120px] pr-4 py-2 font-medium">
                         {formatNumber(vault.feeGenerated || 0)}
                       </td>
-                      <td className="text-right pr-4 py-2 min-w-[90px] font-medium">
+                      <td className="text-right w-[120px] pr-4 py-2 font-medium">
                         {formatNumber(vault.tvl || 0)}
                       </td>
-                      <td className="text-right pr-4 py-2 min-w-[80px] font-medium">
+                      <td className="text-right w-[100px] pr-4 py-2 font-medium">
                         {(vault.apr * 100).toFixed(2)}%
                       </td>
-                      <td className="text-right pr-6 py-2 min-w-[70px] font-medium">
+                      <td className="text-right w-[100px] pr-6 py-2 font-medium">
                         {Math.round(vault.totalUser)}
                       </td>
                     </tr>
