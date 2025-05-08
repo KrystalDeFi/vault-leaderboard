@@ -91,14 +91,30 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     }));
   };
 
-  const filteredAndSortedVaults = useFilteredAndSortedVaults(vaults, filterOptions, sortOptions);
+  // Filter vaults based on selected period
+  const timeFilteredVaults = useMemo(() => {
+    return vaults.filter(vault => {
+      switch (selectedPeriod) {
+        case "this-week":
+          return vault.ageInSecond <= 604800; // 7 days
+        case "last-week":
+          return vault.ageInSecond > 604800 && vault.ageInSecond <= 1209600; // 8-14 days
+        case "all-time":
+          return true;
+        default:
+          return true;
+      }
+    });
+  }, [vaults, selectedPeriod]);
+
+  const filteredAndSortedVaults = useFilteredAndSortedVaults(timeFilteredVaults, filterOptions, sortOptions);
 
   const topPerformingUsers = useMemo(() => {
     console.log("Sorting builders by:", sortOptions.field, sortOptions.direction);
     
     const builderMap = new Map();
     
-    vaults.forEach(vault => {
+    timeFilteredVaults.forEach(vault => {
       const builder = vault.owner;
       console.log('Builder data:', {
         address: builder.address,
@@ -153,7 +169,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
       ...builder,
       rank: index + 1
     }));
-  }, [vaults, sortOptions]);
+  }, [timeFilteredVaults, sortOptions]);
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (buildersCurrentPage - 1) * ITEMS_PER_PAGE;
