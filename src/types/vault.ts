@@ -71,7 +71,7 @@ export interface Vault {
   tvl: number;
   apr: number;
   status: string;
-  ageInSeconds: number;
+  ageInSecond: number;
   tokens: TokenWithBalance[];
   assets: TokenWithBalance[];
   supportedPoolAddresses: string[];
