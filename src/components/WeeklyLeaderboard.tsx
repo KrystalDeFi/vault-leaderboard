@@ -56,6 +56,22 @@ const COLUMN_HELP = {
 
 const ITEMS_PER_PAGE = 10;
 
+const formatCreatedTime = (ageInSecond: number) => {
+  const now = Math.floor(Date.now() / 1000);
+  const createdTimestamp = now - ageInSecond;
+  const createdDate = new Date(createdTimestamp * 1000);
+  
+  // Format: May 9, 13:32 UTC
+  return createdDate.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  }) + ' UTC';
+};
+
 const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const periodOptions = [
     { value: "this-week", label: "This Week" },
@@ -83,6 +99,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   
   const [buildersCurrentPage, setBuildersCurrentPage] = useState(1);
   const [vaultsCurrentPage, setVaultsCurrentPage] = useState(1);
+  const [challengeVaultsPage, setChallengeVaultsPage] = useState(1);
 
   const handleSortChange = (field: SortField) => {
     setSortOptions(prev => ({
@@ -107,7 +124,24 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     });
   }, [vaults, selectedPeriod]);
 
+  // Filter vaults for Farm & Earn Challenge
+  const challengeVaults = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const challengeStart = 1746781200; // Friday, May 9, 2025 – 9:00 AM GMT
+    const challengeEnd = 1747386000;   // Friday, May 16, 2025 – 9:00 AM GMT
+    
+    // Calculate how many seconds ago the challenge period was
+    const secondsSinceChallengeStart = now - challengeStart;
+    const secondsSinceChallengeEnd = now - challengeEnd;
+    
+    return vaults.filter(vault => 
+      vault.ageInSecond <= secondsSinceChallengeStart && 
+      vault.ageInSecond >= secondsSinceChallengeEnd
+    );
+  }, [vaults]);
+
   const filteredAndSortedVaults = useFilteredAndSortedVaults(timeFilteredVaults, filterOptions, sortOptions);
+  const filteredAndSortedChallengeVaults = useFilteredAndSortedVaults(challengeVaults, filterOptions, sortOptions);
 
   const topPerformingUsers = useMemo(() => {
     console.log("Sorting builders by:", sortOptions.field, sortOptions.direction);
@@ -224,6 +258,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
             </TabsTrigger>
             <TabsTrigger value="vaults" className="unified-tab min-h-[44px] px-5">
               Top Vaults
+            </TabsTrigger>
+            <TabsTrigger value="challenge" className="unified-tab min-h-[44px] px-5">
+              Farm & Earn Challenge
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -511,6 +548,144 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
               currentPage={vaultsCurrentPage}
               totalPages={vaultsTotalPages}
               setCurrentPage={setVaultsCurrentPage}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="challenge" className="animate-fade-in mt-4">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-0 overflow-hidden">
+            <table className="unified-table w-full">
+              <thead>
+                <tr className="unified-table-header">
+                  <th className="w-12 text-left pl-6 font-semibold text-xs text-[#999] tracking-widest uppercase">
+                    #
+                  </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">
+                    Vault
+                  </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">
+                    Chain
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.FEES ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.TVL ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[100px] pr-4 ${sortOptions.field === SortField.APR ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th
+                    className={`text-right text-xs uppercase w-[100px] pr-6 ${sortOptions.field === SortField.USERS ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                  >
+                    <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                  </th>
+                  <th className="text-right text-xs text-[#999] font-semibold uppercase w-[180px] pr-6">
+                    Created
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedChallengeVaults
+                  .slice((challengeVaultsPage - 1) * ITEMS_PER_PAGE, challengeVaultsPage * ITEMS_PER_PAGE)
+                  .map((vault, idx) => {
+                    const rank = (challengeVaultsPage - 1) * ITEMS_PER_PAGE + idx + 1;
+                    const isTop3 = rank <= 3;
+                    return (
+                      <tr
+                        key={`${vault.chainId}-${vault.vaultAddress}`}
+                        className={`
+                          unified-table-row
+                          ${isTop3 ? "font-bold text-white" : ""}
+                          cursor-pointer hover:bg-[#1a1a1a] transition-colors
+                          w-full
+                        `}
+                        onClick={() => handleVaultRowClick(vault)}
+                        tabIndex={0}
+                        style={{
+                          fontSize: "1rem",
+                          minHeight: 56,
+                          height: 56,
+                          fontWeight: isTop3 ? 700 : 500,
+                        }}
+                        aria-label={`View vault ${vault.name || vault.vaultAddress}`}
+                      >
+                        <td className="pl-6 pr-2 py-2 align-middle min-w-[48px]">
+                          <span className="flex items-center justify-between">
+                            {isTop3 ? (
+                              <span className={`
+                                bg-[#18181b]
+                                rounded-full
+                                w-9 h-9 flex items-center justify-center
+                                mr-2
+                              `}>
+                                <Trophy
+                                  className={`
+                                    w-5 h-5
+                                    ${rank === 1 && "text-[#FFE567]"}
+                                    ${rank === 2 && "text-[#B4B6BC]"}
+                                    ${rank === 3 && "text-[#FFAD7D]"}
+                                  `}
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="font-mono text-base text-[#999] pl-2"
+                                style={{ fontWeight: 600 }}
+                              >
+                                {rank}
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="py-2 pl-2 pr-2 min-w-[240px]">
+                          <div className="flex flex-col">
+                            <div className="font-semibold text-[#fff] text-base max-w-[240px] truncate font-inter">
+                              {vault.name}
+                            </div>
+                            <div className="mt-1 text-xs text-[#999] font-mono truncate">
+                              {shortenAddress(vault.vaultAddress)}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2 pl-2 pr-2 w-[60px]">
+                          <div className="flex items-center">
+                            <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
+                          </div>
+                        </td>
+                        <td className="text-right w-[120px] pr-4 py-2 font-medium">
+                          {formatNumber(vault.feeGenerated || 0)}
+                        </td>
+                        <td className="text-right w-[120px] pr-4 py-2 font-medium">
+                          {formatNumber(vault.tvl || 0)}
+                        </td>
+                        <td className="text-right w-[100px] pr-4 py-2 font-medium">
+                          {(vault.apr * 100).toFixed(2)}%
+                        </td>
+                        <td className="text-right w-[100px] pr-6 py-2 font-medium">
+                          {Math.round(vault.totalUser)}
+                        </td>
+                        <td className="text-right w-[180px] pr-6 py-2 font-medium text-[#999]">
+                          {formatCreatedTime(vault.ageInSecond)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-4">
+            <TablePagination
+              currentPage={challengeVaultsPage}
+              totalPages={Math.ceil(filteredAndSortedChallengeVaults.length / ITEMS_PER_PAGE)}
+              setCurrentPage={setChallengeVaultsPage}
             />
           </div>
         </TabsContent>
