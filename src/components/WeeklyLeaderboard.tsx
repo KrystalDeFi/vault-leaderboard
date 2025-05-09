@@ -56,6 +56,22 @@ const COLUMN_HELP = {
 
 const ITEMS_PER_PAGE = 10;
 
+const formatCreatedTime = (ageInSecond: number) => {
+  const now = Math.floor(Date.now() / 1000);
+  const createdTimestamp = now - ageInSecond;
+  const createdDate = new Date(createdTimestamp * 1000);
+  
+  // Format: May 9, 13:32 UTC
+  return createdDate.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  }) + ' UTC';
+};
+
 const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const periodOptions = [
     { value: "this-week", label: "This Week" },
@@ -570,6 +586,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   >
                     <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
                   </th>
+                  <th className="text-right text-xs text-[#999] font-semibold uppercase w-[180px] pr-6">
+                    Created
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -651,6 +670,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                         </td>
                         <td className="text-right w-[100px] pr-6 py-2 font-medium">
                           {Math.round(vault.totalUser)}
+                        </td>
+                        <td className="text-right w-[180px] pr-6 py-2 font-medium text-[#999]">
+                          {formatCreatedTime(vault.ageInSecond)}
                         </td>
                       </tr>
                     );
