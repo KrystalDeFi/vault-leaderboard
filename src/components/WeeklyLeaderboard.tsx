@@ -553,6 +553,40 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
         </TabsContent>
 
         <TabsContent value="challenge" className="animate-fade-in mt-4">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] p-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="flex flex-col">
+                <span className="text-sm text-[#999] mb-1">Total Fees Generated</span>
+                <span className="text-xl font-semibold text-white">
+                  {formatNumber(filteredAndSortedChallengeVaults.reduce((sum, vault) => sum + (vault.feeGenerated || 0), 0))}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-[#999] mb-1">Total TVL</span>
+                <span className="text-xl font-semibold text-white">
+                  {formatNumber(filteredAndSortedChallengeVaults.reduce((sum, vault) => sum + (vault.tvl || 0), 0))}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-[#999] mb-1">Total Users</span>
+                <span className="text-xl font-semibold text-white">
+                  {Math.round(filteredAndSortedChallengeVaults.reduce((sum, vault) => sum + (vault.totalUser || 0), 0))}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-[#999] mb-1">Total Vaults</span>
+                <span className="text-xl font-semibold text-white">
+                  {filteredAndSortedChallengeVaults.length}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-[#999] mb-1">Total Chains</span>
+                <span className="text-xl font-semibold text-white">
+                  {new Set(filteredAndSortedChallengeVaults.map(vault => vault.chainId)).size}
+                </span>
+              </div>
+            </div>
+          </div>
           <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-0 overflow-hidden">
             <table className="unified-table w-full">
               <thead>
