@@ -136,7 +136,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     
     return vaults.filter(vault => 
       vault.ageInSecond <= secondsSinceChallengeStart && 
-      vault.ageInSecond >= secondsSinceChallengeEnd
+      vault.ageInSecond >= secondsSinceChallengeEnd &&
+      vault.allowDeposit === true
     );
   }, [vaults]);
 
