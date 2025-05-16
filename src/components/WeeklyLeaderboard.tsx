@@ -773,10 +773,26 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">Vault</th>
                       <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[140px] pl-2">Owner</th>
                       <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">Chain</th>
-                      <th className="text-right text-xs text-[#999] font-semibold uppercase w-[120px] pr-4">Fees</th>
-                      <th className="text-right text-xs text-[#999] font-semibold uppercase w-[120px] pr-4">TVL</th>
-                      <th className="text-right text-xs text-[#999] font-semibold uppercase w-[100px] pr-4">APR</th>
-                      <th className="text-right text-xs text-[#999] font-semibold uppercase w-[100px] pr-6">Users</th>
+                      <th
+                        className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.FEES ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                      >
+                        <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                      </th>
+                      <th
+                        className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.TVL ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                      >
+                        <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                      </th>
+                      <th
+                        className={`text-right text-xs uppercase w-[100px] pr-4 ${sortOptions.field === SortField.APR ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                      >
+                        <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                      </th>
+                      <th
+                        className={`text-right text-xs uppercase w-[100px] pr-6 ${sortOptions.field === SortField.USERS ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                      >
+                        <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                      </th>
                       <th className="text-right text-xs text-[#999] font-semibold uppercase w-[180px] pr-6">Created</th>
                     </tr>
                   </thead>
