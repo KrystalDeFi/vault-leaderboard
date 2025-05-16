@@ -4,6 +4,7 @@ import React, {
 } from 'react';
 
 import {
+  Download,
   Trophy,
   Twitter,
 } from 'lucide-react';
@@ -230,6 +231,53 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
   };
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Rank',
+      'Vault Name',
+      'Vault Address',
+      'Owner',
+      'Owner Address',
+      'Chain',
+      'Fees Generated',
+      'TVL',
+      'APR',
+      'Total Users',
+      'Created'
+    ];
+
+    const csvData = filteredAndSortedChallengeVaults.map((vault, index) => [
+      index + 1,
+      vault.name,
+      vault.vaultAddress,
+      vault.owner.twitterUsername || shortenAddress(vault.owner.address),
+      vault.owner.address,
+      vault.chainName,
+      vault.feeGenerated || 0,
+      vault.tvl || 0,
+      (vault.apr * 100).toFixed(2) + '%',
+      Math.round(vault.totalUser),
+      formatCreatedTime(vault.ageInSecond)
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    link.setAttribute('download', `farm-earn-challenge-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="w-full max-w-5xl mx-auto py-8 space-y-8">
@@ -266,7 +314,16 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
           </TabsList>
         </Tabs>
         <div className="flex-shrink-0 w-full sm:w-auto mt-6 sm:mt-0 sm:ml-auto">
-          <div className="flex sm:justify-end">
+          <div className="flex sm:justify-end gap-3">
+            {activeTab === 'challenge' && (
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 px-4 h-11 min-h-[44px] bg-[#18181b] border border-[#222] rounded-full text-[#e5e5e7] font-medium text-sm shadow-none ring-0 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] hover:bg-[#222] transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+            )}
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
               <SelectTrigger className="w-[180px] h-11 min-h-[44px] bg-[#18181b] border border-[#222] rounded-full text-[#e5e5e7] font-medium text-base shadow-none ring-0 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]">
                 <SelectValue placeholder="Select period" />
@@ -598,6 +655,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">
                     Vault
                   </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[140px] pl-2">
+                    Owner
+                  </th>
                   <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">
                     Chain
                   </th>
@@ -689,6 +749,51 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                             </div>
                           </div>
                         </td>
+                        <td className="py-2 pl-2 pr-2 min-w-[140px]">
+                          <div className="flex items-center gap-1.5">
+                            <Avatar 
+                              className="w-5 h-5 border border-[#222] bg-[#131313] cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (vault.owner.avatarUrl && vault.owner.twitterUsername) {
+                                  window.open(`https://x.com/${vault.owner.twitterUsername}`, '_blank');
+                                } else {
+                                  handleUserRowClick(vault.owner.address);
+                                }
+                              }}
+                            >
+                              {vault.owner.avatarUrl ? (
+                                <AvatarImage src={vault.owner.avatarUrl} alt={vault.owner.twitterUsername || shortenAddress(vault.owner.address)} />
+                              ) : (
+                                <AvatarFallback className="text-[10px] font-bold text-[#fff] uppercase">
+                                  {vault.owner.twitterUsername?.[0] ?? vault.owner.address.slice(2, 4)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium text-[#fff] text-xs truncate font-inter">
+                                  {vault.owner.twitterUsername || shortenAddress(vault.owner.address)}
+                                </span>
+                                {vault.owner.twitterUsername && (
+                                  <a
+                                    href={`https://x.com/${vault.owner.twitterUsername}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-0.5 rounded-full hover:bg-white/5 transition-colors inline-flex items-center justify-center"
+                                    onClick={(e) => e.stopPropagation()}
+                                    aria-label={`View ${vault.owner.twitterUsername} on X`}
+                                  >
+                                    <Twitter className="w-2.5 h-2.5 text-white/60" />
+                                  </a>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-[#999] font-mono truncate">
+                                {shortenAddress(vault.owner.address)}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
                         <td className="py-2 pl-2 pr-2 w-[60px]">
                           <div className="flex items-center">
                             <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
@@ -706,7 +811,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                         <td className="text-right w-[100px] pr-6 py-2 font-medium">
                           {Math.round(vault.totalUser)}
                         </td>
-                        <td className="text-right w-[180px] pr-6 py-2 font-medium text-[#999]">
+                        <td className="text-right w-[180px] pr-6 py-2 font-medium text-[#999] text-xs">
                           {formatCreatedTime(vault.ageInSecond)}
                         </td>
                       </tr>
