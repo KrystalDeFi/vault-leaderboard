@@ -16,9 +16,10 @@ interface SortHeaderProps {
   label: string;
   sortOptions: SortOptions;
   onSortChange: (field: SortField) => void;
+  className?: string;
 }
 
-const SortHeader = ({ field, label, sortOptions, onSortChange }: SortHeaderProps) => {
+const SortHeader = ({ field, label, sortOptions, onSortChange, className }: SortHeaderProps) => {
   const handleSort = () => {
     onSortChange(field);
   };
@@ -26,7 +27,8 @@ const SortHeader = ({ field, label, sortOptions, onSortChange }: SortHeaderProps
   return (
     <span
       className={cn(
-        'flex items-center justify-end gap-2 w-full h-full font-medium text-xs text-[#999] uppercase cursor-pointer select-none',
+        'flex items-center gap-2 w-full h-full cursor-pointer select-none',
+        className
       )}
       onClick={handleSort}
     >
