@@ -152,13 +152,13 @@ export interface FilterOptions {
 }
 
 export enum SortField {
-  APR = 'apr',
+  FEES = 'fees',
+  USERS = 'users',
+  VAULTS = 'vaults',
   TVL = 'tvl',
-  PNL = 'pnl',
-  FEES = 'feeGenerated',
-  RISK = 'riskScore',
-  USERS = 'totalUsers',
-  VAULTS = 'vaultCount'
+  APR = 'apr',
+  FEE_REBATE = 'feeRebate',
+  OWNER = 'owner'
 }
 
 export interface SortOptions {

@@ -28,6 +28,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { useMigratedVaults } from '@/hooks/useMigratedVaults';
 import { useFilteredAndSortedVaults } from '@/hooks/useVaultData';
 import {
   formatNumber,
@@ -74,6 +75,34 @@ const formatCreatedTime = (ageInSecond: number) => {
 };
 
 const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
+  const { migratedVaults, loading: migratedVaultsLoading, error: migratedVaultsError } = useMigratedVaults();
+  
+  const [migrateSortOptions, setMigrateSortOptions] = useState<SortOptions>({
+    field: SortField.FEE_REBATE,
+    direction: 'desc'
+  });
+
+  // Sort migrated vaults by feeAmountUsd
+  const sortedMigratedVaults = useMemo(() => {
+    console.log('Migrated Vaults:', migratedVaults);
+    return [...migratedVaults].sort((a, b) => {
+      const multiplier = migrateSortOptions.direction === 'desc' ? -1 : 1;
+      let ownerA: string;
+      let ownerB: string;
+      
+      switch (migrateSortOptions.field) {
+        case SortField.FEE_REBATE:
+          return (a.feeAmountUsd - b.feeAmountUsd) * multiplier;
+        case SortField.OWNER:
+          ownerA = a.owner?.twitterUsername || a.ownerAddress;
+          ownerB = b.owner?.twitterUsername || b.ownerAddress;
+          return ownerA.localeCompare(ownerB) * multiplier;
+        default:
+          return (a.feeAmountUsd - b.feeAmountUsd) * multiplier;
+      }
+    });
+  }, [migratedVaults, migrateSortOptions]);
+
   const periodOptions = [
     { value: "this-week", label: "This Week" },
     { value: "last-week", label: "Last Week" },
@@ -105,6 +134,13 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
   const handleSortChange = (field: SortField) => {
     setSortOptions(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const handleMigrateSortChange = (field: SortField) => {
+    setMigrateSortOptions(prev => ({
       field,
       direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
     }));
@@ -372,7 +408,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     document.body.removeChild(link);
   };
 
-  if (loading) {
+  if (loading || migratedVaultsLoading) {
     return (
       <div className="w-full max-w-5xl mx-auto py-8 space-y-8">
         <Skeleton className="h-12 w-40 mx-auto" />
@@ -381,6 +417,10 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
         ))}
       </div>
     );
+  }
+
+  if (migratedVaultsError) {
+    console.error('Error loading migrated vaults:', migratedVaultsError);
   }
 
   return (
@@ -402,14 +442,17 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
             <TabsTrigger value="vaults" className="unified-tab min-h-[44px] px-5">
               Top Vaults
             </TabsTrigger>
-            <TabsTrigger value="challenge" className="unified-tab min-h-[44px] px-5">
+            <TabsTrigger value="migrate" className="unified-tab min-h-[44px] px-5">
+              Migrate & Earn
+            </TabsTrigger>
+            <TabsTrigger value="farm" className="unified-tab min-h-[44px] px-5">
               Farm & Earn Challenge
             </TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex-shrink-0 w-full sm:w-auto mt-6 sm:mt-0 sm:ml-auto">
           <div className="flex sm:justify-end gap-3">
-            {activeTab === 'challenge' && (
+            {activeTab === 'farm' && (
               <button
                 onClick={() => handleExportCSV(challengeTab)}
                 className="flex items-center gap-2 px-4 h-11 min-h-[44px] bg-[#18181b] border border-[#222] rounded-full text-[#e5e5e7] font-medium text-sm shadow-none ring-0 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] hover:bg-[#222] transition-colors"
@@ -589,9 +632,21 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">
                     Vault
                   </th>
-                  <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">
-                    Chain
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[140px] pl-2 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5" /> {/* Spacer for avatar */}
+                      <div className="flex flex-col">
+                        <SortHeader
+                          field={SortField.OWNER}
+                          label="Owner"
+                          sortOptions={sortOptions}
+                          onSortChange={handleSortChange}
+                          className="text-xs font-medium text-[#999]"
+                        />
+                      </div>
+                    </div>
                   </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">Chain</th>
                   <th
                     className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.FEES ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
                   >
@@ -674,6 +729,37 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                           </div>
                         </div>
                       </td>
+                      <td className="text-left min-w-[140px] pl-2 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <Avatar 
+                            className="w-5 h-5 border border-[#222] bg-[#131313] cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (vault.owner.avatarUrl && vault.owner.twitterUsername) {
+                                window.open(`https://x.com/${vault.owner.twitterUsername}`, '_blank');
+                              } else {
+                                handleUserRowClick(vault.owner.address);
+                              }
+                            }}
+                          >
+                            {vault.owner.avatarUrl ? (
+                              <AvatarImage src={vault.owner.avatarUrl} alt={vault.owner.twitterUsername || shortenAddress(vault.owner.address)} />
+                            ) : (
+                              <AvatarFallback className="text-[10px] font-bold text-[#fff] uppercase">
+                                {vault.owner.twitterUsername?.[0] ?? vault.owner.address.slice(2, 4)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-[#fff] text-sm truncate font-inter">
+                              {vault.owner?.twitterUsername || shortenAddress(vault.owner.address)}
+                            </span>
+                            <span className="text-[10px] text-[#999] font-mono truncate">
+                              {shortenAddress(vault.owner.address)}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
                       <td className="py-2 pl-2 pr-2 w-[60px]">
                         <div className="flex items-center">
                           <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
@@ -707,7 +793,158 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="challenge" className="animate-fade-in mt-4">
+        <TabsContent value="migrate" className="animate-fade-in">
+          <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] py-2 px-0 sm:px-0 overflow-hidden">
+            <table className="unified-table w-full">
+              <thead>
+                <tr className="unified-table-header">
+                  <th className="w-10 text-left pl-4 font-semibold text-xs text-[#999] tracking-widest uppercase">#</th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[180px] pl-4 py-2">Vault</th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[140px] pl-2 py-2">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5" /> {/* Spacer for avatar */}
+                      <div className="flex flex-col">
+                        <SortHeader
+                          field={SortField.OWNER}
+                          label="Owner"
+                          sortOptions={migrateSortOptions}
+                          onSortChange={handleMigrateSortChange}
+                          className="text-xs font-medium text-[#999]"
+                        />
+                      </div>
+                    </div>
+                  </th>
+                  <th className="text-left text-xs text-[#999] font-semibold uppercase w-[60px] pl-2">Chain</th>
+                  <th
+                    className={`text-right text-xs uppercase w-[180px] pr-6 ${
+                      migrateSortOptions.field === SortField.FEE_REBATE ? 'text-white font-semibold' : 'text-[#999] font-semibold'
+                    }`}
+                  >
+                    <SortHeader
+                      field={SortField.FEE_REBATE}
+                      label="Fee Rebate (USD)"
+                      sortOptions={migrateSortOptions}
+                      onSortChange={handleMigrateSortChange}
+                    />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedMigratedVaults && sortedMigratedVaults.length > 0 ? (
+                  sortedMigratedVaults.map((vault, idx) => {
+                    const rank = idx + 1;
+                    const isTop3 = rank <= 3;
+                    return (
+                      <tr
+                        key={`${vault.chainId}-${vault.vaultAddress}`}
+                        className={`
+                          unified-table-row
+                          ${isTop3 ? "font-bold text-white" : ""}
+                          cursor-pointer hover:bg-[#1a1a1a] transition-colors
+                          w-full
+                        `}
+                        style={{
+                          fontSize: "1rem",
+                          minHeight: 56,
+                          height: 56,
+                          fontWeight: isTop3 ? 700 : 500,
+                        }}
+                      >
+                        <td className="pl-4 pr-2 py-2 align-middle min-w-[40px]">
+                          <span className="flex items-center justify-between">
+                            {isTop3 ? (
+                              <span className={`
+                                bg-[#18181b]
+                                rounded-full
+                                w-8 h-8 flex items-center justify-center
+                                mr-2
+                              `}>
+                                <Trophy
+                                  className={`
+                                    w-4 h-4
+                                    ${rank === 1 && "text-[#FFE567]"}
+                                    ${rank === 2 && "text-[#B4B6BC]"}
+                                    ${rank === 3 && "text-[#FFAD7D]"}
+                                  `}
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="font-mono text-sm text-[#999] pl-1"
+                                style={{ fontWeight: 600 }}
+                              >
+                                {rank}
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="py-2 pl-2 pr-2 min-w-[180px]">
+                          <div className="flex flex-col">
+                            <div className="font-semibold text-[#fff] text-sm max-w-[180px] truncate font-inter">
+                              {vault.vaultName}
+                            </div>
+                            <div className="mt-0.5 text-[10px] text-[#999] font-mono truncate">
+                              {shortenAddress(vault.vaultAddress)}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-left min-w-[140px] pl-2 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <Avatar 
+                              className="w-5 h-5 border border-[#222] bg-[#131313] cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (vault.owner.avatarUrl && vault.owner.twitterUsername) {
+                                  window.open(`https://x.com/${vault.owner.twitterUsername}`, '_blank');
+                                } else {
+                                  handleUserRowClick(vault.owner.address);
+                                }
+                              }}
+                            >
+                              {vault.owner.avatarUrl ? (
+                                <AvatarImage src={vault.owner.avatarUrl} alt={vault.owner.twitterUsername || shortenAddress(vault.owner.address)} />
+                              ) : (
+                                <AvatarFallback className="text-[10px] font-bold text-[#fff] uppercase">
+                                  {vault.owner.twitterUsername?.[0] ?? vault.owner.address.slice(2, 4)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-[#fff] text-sm truncate font-inter">
+                                {vault.owner?.twitterUsername || shortenAddress(vault.owner.address)}
+                              </span>
+                              <span className="text-[10px] text-[#999] font-mono truncate">
+                                {shortenAddress(vault.owner.address)}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2 pl-2 pr-2 w-[60px]">
+                          <div className="flex items-center">
+                            <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
+                          </div>
+                        </td>
+                        <td className="text-right w-[180px] pr-6 py-2 font-medium">
+                          <span className="text-base">
+                            {vault.feeAmountUsd.toFixed(2)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-[#999]">
+                      No migrated vaults found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="farm" className="animate-fade-in mt-4">
           <div className="bg-[#0A0A0A] rounded-2xl shadow-lg border border-[#1f1f1f] p-6 mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               <div className="flex flex-col">
