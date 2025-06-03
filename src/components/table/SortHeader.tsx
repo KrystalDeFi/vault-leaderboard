@@ -34,7 +34,7 @@ const SortHeader = ({ field, label, sortOptions, onSortChange, className }: Sort
     >
       {label}
       {sortOptions.field === field && (
-        sortOptions.direction === 'desc' ? 
+        sortOptions.direction === 'asc' ? 
           <ArrowUp className="w-3.5 h-3.5 opacity-60" /> : 
           <ArrowDown className="w-3.5 h-3.5 opacity-60" />
       )}

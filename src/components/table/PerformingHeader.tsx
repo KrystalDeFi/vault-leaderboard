@@ -1,9 +1,20 @@
-
 import React from 'react';
-import { SortField, SortOptions } from '@/types/vault';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+
+import {
+  ArrowDown,
+  ArrowUp,
+} from 'lucide-react';
+
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import {
+  SortField,
+  SortOptions,
+} from '@/types/vault';
 
 interface PerformingHeaderProps {
   field: SortField;
@@ -34,7 +45,7 @@ const PerformingHeader = ({ field, label, helpText, sortOptions, onSortChange }:
         </HoverCard>
       )}
       {sortOptions.field === field && (
-        sortOptions.direction === 'desc' ? 
+        sortOptions.direction === 'asc' ? 
           <ArrowUp className="w-3.5 h-3.5" /> : 
           <ArrowDown className="w-3.5 h-3.5" />
       )}
