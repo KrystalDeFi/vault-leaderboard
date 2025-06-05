@@ -76,7 +76,7 @@ export const useMigratedVaults = () => {
       try {
         setLoading(true);
         console.log('Fetching migrated vaults...');
-        const response = await fetch('https://api.krystal.app/all/v1/vaults/convertedVault/rebateFees');
+        const response = await fetch('https://api.krystal.app/all/v1/vaults/convertedVault/rebateFees?fromTimestamp=1749110688&toTimestamp=1780646644');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
