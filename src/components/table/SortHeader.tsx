@@ -27,16 +27,16 @@ const SortHeader = ({ field, label, sortOptions, onSortChange, className }: Sort
   return (
     <span
       className={cn(
-        'flex items-center gap-2 w-full h-full cursor-pointer select-none',
+        'flex items-center justify-end gap-1 w-full h-full cursor-pointer select-none',
         className
       )}
       onClick={handleSort}
     >
-      {label}
+      <span className="truncate">{label}</span>
       {sortOptions.field === field && (
         sortOptions.direction === 'asc' ? 
-          <ArrowUp className="w-3.5 h-3.5 opacity-60" /> : 
-          <ArrowDown className="w-3.5 h-3.5 opacity-60" />
+          <ArrowUp className="w-3.5 h-3.5 opacity-60 flex-shrink-0" /> : 
+          <ArrowDown className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
       )}
     </span>
   );

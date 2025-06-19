@@ -130,6 +130,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const [buildersCurrentPage, setBuildersCurrentPage] = useState(1);
   const [vaultsCurrentPage, setVaultsCurrentPage] = useState(1);
   const [challengeVaultsPage, setChallengeVaultsPage] = useState(1);
+  const [migrateVaultsPage, setMigrateVaultsPage] = useState(1);
 
   const handleSortChange = (field: SortField) => {
     setSortOptions(prev => ({
@@ -324,8 +325,17 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     }));
   }, [filteredAndSortedVaults, vaultsCurrentPage]);
 
+  const paginatedMigratedVaults = useMemo(() => {
+    const startIndex = (migrateVaultsPage - 1) * ITEMS_PER_PAGE;
+    return sortedMigratedVaults.slice(startIndex, startIndex + ITEMS_PER_PAGE).map((vault, idx) => ({
+      ...vault,
+      rank: startIndex + idx + 1,
+    }));
+  }, [sortedMigratedVaults, migrateVaultsPage]);
+
   const usersTotalPages = Math.ceil(topPerformingUsers.length / ITEMS_PER_PAGE);
   const vaultsTotalPages = Math.ceil(filteredAndSortedVaults.length / ITEMS_PER_PAGE);
+  const migrateVaultsTotalPages = Math.ceil(sortedMigratedVaults.length / ITEMS_PER_PAGE);
 
   const handleUserRowClick = (address: string) => {
     window.open(`https://defi.krystal.app/account/${address}/positions?tab=Vaults#owned_vaults`, '_blank');
@@ -442,7 +452,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
               Top Vaults
             </TabsTrigger>
             <TabsTrigger value="migrate" className="unified-tab min-h-[44px] px-5">
-              Migrate & Earn
+              Migrate to Vaults
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -815,10 +825,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                 </tr>
               </thead>
               <tbody>
-                {sortedMigratedVaults && sortedMigratedVaults.length > 0 ? (
-                  sortedMigratedVaults.map((vault, idx) => {
-                    const rank = idx + 1;
-                    const isTop3 = rank <= 3;
+                {paginatedMigratedVaults.length > 0 ? (
+                  paginatedMigratedVaults.map((vault) => {
+                    const isTop3 = vault.rank <= 3;
                     return (
                       <tr
                         key={`${vault.chainId}-${vault.vaultAddress}`}
@@ -848,9 +857,9 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                                 <Trophy
                                   className={`
                                     w-4 h-4
-                                    ${rank === 1 && "text-[#FFE567]"}
-                                    ${rank === 2 && "text-[#B4B6BC]"}
-                                    ${rank === 3 && "text-[#FFAD7D]"}
+                                    ${vault.rank === 1 && "text-[#FFE567]"}
+                                    ${vault.rank === 2 && "text-[#B4B6BC]"}
+                                    ${vault.rank === 3 && "text-[#FFAD7D]"}
                                   `}
                                 />
                               </span>
@@ -859,7 +868,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                                 className="font-mono text-sm text-[#999] pl-1"
                                 style={{ fontWeight: 600 }}
                               >
-                                {rank}
+                                {vault.rank}
                               </span>
                             )}
                           </span>
@@ -924,6 +933,14 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                 )}
               </tbody>
             </table>
+          </div>
+          
+          <div className="mt-4">
+            <TablePagination
+              currentPage={migrateVaultsPage}
+              totalPages={migrateVaultsTotalPages}
+              setCurrentPage={setMigrateVaultsPage}
+            />
           </div>
         </TabsContent>
       </Tabs>

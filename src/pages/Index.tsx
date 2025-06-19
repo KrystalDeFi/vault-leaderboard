@@ -1,13 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+
+import {
+  Compass,
+  Trophy,
+  Vault as VaultIcon,
+} from 'lucide-react';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useBuilderMetrics } from '@/hooks/useBuilderData';
 import { fetchVaults } from '@/services/api';
 import { Vault } from '@/types/vault';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Vault as VaultIcon, Compass } from 'lucide-react';
+
+import DiscoverVaultsTab from './DiscoverVaultsTab';
 import LeaderboardTab from './LeaderboardTab';
 import VaultBuildersTab from './VaultBuildersTab';
-import DiscoverVaultsTab from './DiscoverVaultsTab';
-import { useBuilderMetrics } from '@/hooks/useBuilderData';
 
 const Index = () => {
   const { toast } = useToast();
@@ -48,6 +66,42 @@ const Index = () => {
 
   return (
     <div className="container mx-auto py-10 px-4 font-inter">
+      {/* Top Navigation Bar with Community Tools */}
+      <div className="flex justify-end mb-8">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="h-10 px-4 bg-[#18181b] border border-[#222] rounded-full text-[#e5e5e7] font-medium text-sm hover:bg-[#222] transition-colors flex items-center gap-2">
+              Community Tools
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#999]">
+                <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-[#18181b] border-[#222] z-50 min-w-[200px]">
+            <DropdownMenuItem asChild>
+              <a 
+                href="https://lpwhales.netlify.app/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 text-sm text-[#e5e5e7] px-3 py-2 hover:bg-[#222] rounded cursor-pointer"
+              >
+                LP Whale Explorer
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a 
+                href="https://analytics.krystal.app/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 text-sm text-[#e5e5e7] px-3 py-2 hover:bg-[#222] rounded cursor-pointer"
+              >
+                LPs Analysis
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <header className="text-center mb-16">
         <h1 className="text-5xl font-bold mb-6 font-inter text-white">
           Vault Arena
