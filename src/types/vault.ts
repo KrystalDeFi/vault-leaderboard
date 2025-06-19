@@ -157,6 +157,7 @@ export enum SortField {
   VAULTS = 'vaults',
   TVL = 'tvl',
   APR = 'apr',
+  PNL = 'pnl',
   FEE_REBATE = 'feeRebate',
   OWNER = 'owner'
 }
