@@ -78,6 +78,26 @@ const Index = () => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-[#18181b] border-[#222] z-50 min-w-[200px]">
+          <DropdownMenuItem asChild>
+              <a 
+                href="https://vault-performance.netlify.app/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 text-sm text-[#e5e5e7] px-3 py-2 hover:bg-[#222] rounded cursor-pointer"
+              >
+                Vault Participant Performance
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a 
+                href="https://vault-owner-bps.netlify.app/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 text-sm text-[#e5e5e7] px-3 py-2 hover:bg-[#222] rounded cursor-pointer"
+              >
+                Vault Owner BPS
+              </a>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <a 
                 href="https://lpwhales.netlify.app/" 
