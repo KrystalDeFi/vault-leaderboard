@@ -23,9 +23,10 @@ interface VaultCardProps {
   vault: Vault;
   onClick: (vault: Vault) => void;
   onJoinClick: (e: React.MouseEvent) => void;
+  isAutoFarm?: boolean;
 }
 
-const VaultCard = ({ vault, onClick, onJoinClick }: VaultCardProps) => {
+const VaultCard = ({ vault, onClick, onJoinClick, isAutoFarm = false }: VaultCardProps) => {
   const vaultUrl = `https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`;
 
   return (
@@ -41,11 +42,11 @@ const VaultCard = ({ vault, onClick, onJoinClick }: VaultCardProps) => {
             <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} className="text-white/60" />
             <span className="text-xs font-medium text-white/60 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              {calculateDaysAgo(vault.ageInSeconds)}
+              {calculateDaysAgo(vault.ageInSecond)}
             </span>
           </div>
         </div>
-        <TokenIcon token={vault.principalToken} showSymbol={true} />
+        {!isAutoFarm && <TokenIcon token={vault.principalToken} showSymbol={true} />}
       </div>
 
       {/* Metrics Grid */}
@@ -80,11 +81,26 @@ const VaultCard = ({ vault, onClick, onJoinClick }: VaultCardProps) => {
         </div>
       </div>
 
+      {/* Daily Yield for Auto-Farms */}
+      {isAutoFarm && (
+        <div className="rounded-xl bg-white/5 px-3 py-2">
+          <div className="text-xs font-medium text-white/50 mb-1">Daily Yield</div>
+          <div className="text-sm font-semibold text-white">
+            {formatNumber(vault.earning24h || 0)}
+          </div>
+          <div className="text-xs text-[#999]">
+            ~{vault.tvl > 0 ? ((vault.earning24h || 0) / vault.tvl * 100).toFixed(3) : '0.000'}%
+          </div>
+        </div>
+      )}
+
       {/* Risk & Strategy Tags */}
-      <div className="flex flex-wrap gap-2">
-        <RiskBadge risk={vault.riskScore} className="text-xs font-medium px-3 py-[2px]" />
-        <StrategyBadge strategy={vault.rangeStrategyType} className="text-xs font-medium px-3 py-[2px]" />
-      </div>
+      {!isAutoFarm && (
+        <div className="flex flex-wrap gap-2">
+          <RiskBadge risk={vault.riskScore} className="text-xs font-medium px-3 py-[2px]" />
+          <StrategyBadge strategy={vault.rangeStrategyType} className="text-xs font-medium px-3 py-[2px]" />
+        </div>
+      )}
 
       {/* Owner & Users */}
       <div className="space-y-1">
@@ -98,18 +114,20 @@ const VaultCard = ({ vault, onClick, onJoinClick }: VaultCardProps) => {
       </div>
 
       {/* Action Button */}
-      <div>
-        <Button 
-          className="w-full rounded-full border border-white/10 px-4 py-1 text-sm font-medium text-white/90 hover:border-white/30 hover:text-white bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!vault.allowDeposit}
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(vaultUrl, '_blank');
-          }}
-        >
-          {vault.allowDeposit ? 'Join' : 'Private'}
-        </Button>
-      </div>
+      {!isAutoFarm && (
+        <div>
+          <Button 
+            className="w-full rounded-full border border-white/10 px-4 py-1 text-sm font-medium text-white/90 hover:border-white/30 hover:text-white bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!vault.allowDeposit}
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(vaultUrl, '_blank');
+            }}
+          >
+            {vault.allowDeposit ? 'Join' : 'Private'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

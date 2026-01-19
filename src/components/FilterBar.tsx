@@ -30,6 +30,7 @@ interface FilterBarProps {
   filterOptions: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
   className?: string;
+  isAutoFarm?: boolean;
 }
 
 const CHAINS = [
@@ -41,7 +42,7 @@ const CHAINS = [
   { id: 8453, name: 'Base' },
 ];
 
-const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps) => {
+const FilterBar = ({ filterOptions, onFilterChange, className, isAutoFarm = false }: FilterBarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [aprRange, setAprRange] = useState<[number | null, number | null]>([
     filterOptions.minAPR,
@@ -150,44 +151,48 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Principal Token</Label>
-                  <Select
-                    value={filterOptions.principalToken || "none"}
-                    onValueChange={(value) => handleFilterUpdate('principalToken', value === "none" ? null : value)}
-                  >
-                    <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
-                      <SelectValue placeholder="Any token" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#0D0D0D] border-white/10">
-                      <SelectItem value="none">Any token</SelectItem>
-                      <SelectItem value="USDC">USDC</SelectItem>
-                      <SelectItem value="USDT">USDT</SelectItem>
-                      <SelectItem value="DAI">DAI</SelectItem>
-                      <SelectItem value="WETH">WETH</SelectItem>
-                      <SelectItem value="WBTC">WBTC</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isAutoFarm && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Principal Token</Label>
+                    <Select
+                      value={filterOptions.principalToken || "none"}
+                      onValueChange={(value) => handleFilterUpdate('principalToken', value === "none" ? null : value)}
+                    >
+                      <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
+                        <SelectValue placeholder="Any token" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0D0D0D] border-white/10">
+                        <SelectItem value="none">Any token</SelectItem>
+                        <SelectItem value="USDC">USDC</SelectItem>
+                        <SelectItem value="USDT">USDT</SelectItem>
+                        <SelectItem value="DAI">DAI</SelectItem>
+                        <SelectItem value="WETH">WETH</SelectItem>
+                        <SelectItem value="WBTC">WBTC</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Risk Level</Label>
-                  <Select
-                    value={filterOptions.riskLevel || "none"}
-                    onValueChange={(value) => handleFilterUpdate('riskLevel', value === "none" ? null : value)}
-                  >
-                    <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
-                      <SelectValue placeholder="Any risk level" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#0D0D0D] border-white/10">
-                      <SelectItem value="none">Any risk level</SelectItem>
-                      <SelectItem value="LOW">Low</SelectItem>
-                      <SelectItem value="MEDIUM">Medium</SelectItem>
-                      <SelectItem value="ELEVATED">Elevated</SelectItem>
-                      <SelectItem value="HIGH">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isAutoFarm && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Risk Level</Label>
+                    <Select
+                      value={filterOptions.riskLevel || "none"}
+                      onValueChange={(value) => handleFilterUpdate('riskLevel', value === "none" ? null : value)}
+                    >
+                      <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
+                        <SelectValue placeholder="Any risk level" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0D0D0D] border-white/10">
+                        <SelectItem value="none">Any risk level</SelectItem>
+                        <SelectItem value="LOW">Low</SelectItem>
+                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                        <SelectItem value="ELEVATED">Elevated</SelectItem>
+                        <SelectItem value="HIGH">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label className="text-xs font-medium tracking-wide uppercase text-white/60">
@@ -224,22 +229,24 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Strategy Type</Label>
-                  <Select
-                    value={filterOptions.rangeStrategy || "none"}
-                    onValueChange={(value) => handleFilterUpdate('rangeStrategy', value === "none" ? null : value)}
-                  >
-                    <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
-                      <SelectValue placeholder="Any strategy" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#0D0D0D] border-white/10">
-                      <SelectItem value="none">Any strategy</SelectItem>
-                      <SelectItem value="WIDE_RANGE">Wide Range</SelectItem>
-                      <SelectItem value="NARROW_RANGE">Narrow Range</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isAutoFarm && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium tracking-wide uppercase text-white/60">Strategy Type</Label>
+                    <Select
+                      value={filterOptions.rangeStrategy || "none"}
+                      onValueChange={(value) => handleFilterUpdate('rangeStrategy', value === "none" ? null : value)}
+                    >
+                      <SelectTrigger className="w-full bg-white/5 border-white/10 text-white rounded-lg">
+                        <SelectValue placeholder="Any strategy" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0D0D0D] border-white/10">
+                        <SelectItem value="none">Any strategy</SelectItem>
+                        <SelectItem value="WIDE_RANGE">Wide Range</SelectItem>
+                        <SelectItem value="NARROW_RANGE">Narrow Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="allow-deposit" className="text-xs font-medium tracking-wide uppercase text-white/60">
@@ -278,7 +285,7 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
               />
             </div>
           )}
-          {filterOptions.principalToken && (
+          {!isAutoFarm && filterOptions.principalToken && (
             <div className="bg-white/5 rounded-full px-3 py-1 text-xs flex items-center gap-1 text-white/90">
               Token: {filterOptions.principalToken}
               <X 
@@ -287,7 +294,7 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
               />
             </div>
           )}
-          {filterOptions.riskLevel && (
+          {!isAutoFarm && filterOptions.riskLevel && (
             <div className="bg-white/5 rounded-full px-3 py-1 text-xs flex items-center gap-1 text-white/90">
               Risk: {filterOptions.riskLevel.toLowerCase()}
               <X 
@@ -314,7 +321,7 @@ const FilterBar = ({ filterOptions, onFilterChange, className }: FilterBarProps)
               />
             </div>
           )}
-          {filterOptions.rangeStrategy && (
+          {!isAutoFarm && filterOptions.rangeStrategy && (
             <div className="bg-white/5 rounded-full px-3 py-1 text-xs flex items-center gap-1 text-white/90">
               Strategy: {filterOptions.rangeStrategy.includes('WIDE') ? 'Wide' : 'Narrow'}
               <X 

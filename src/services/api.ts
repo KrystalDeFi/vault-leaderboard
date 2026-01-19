@@ -5,15 +5,21 @@ export const API_BASE_URL = 'https://api.krystal.app/all/v1/vaults';
 type FetchVaultsOptions = {
   category?: string;
   userAddress?: string;
+  isAutoFarmVault?: boolean;
 };
 
-export async function fetchVaults(category = 'ALL_VAULT', userAddress?: string): Promise<VaultResponse> {
+export async function fetchVaults(options: FetchVaultsOptions = {}): Promise<VaultResponse> {
+  const { category = 'ALL_VAULT', userAddress, isAutoFarmVault } = options;
+  
   try {
     const queryParams = new URLSearchParams({
       perPage: '2000',
       category: category
     });
     if (userAddress) queryParams.set('userAddress', userAddress);
+    if (isAutoFarmVault !== undefined) {
+      queryParams.set('isAutoFarmVault', String(isAutoFarmVault));
+    }
 
     const response = await fetch(`${API_BASE_URL}?${queryParams}`);
     if (!response.ok) {
@@ -21,11 +27,12 @@ export async function fetchVaults(category = 'ALL_VAULT', userAddress?: string):
     }
 
     const data = await response.json();
-    console.log('API Response - Raw Vaults:', data.data.map(v => ({
+    console.log('API Response - Raw Vaults:', data.data?.map(v => ({
       name: v.name,
       chainId: v.chainId,
       vaultAddress: v.vaultAddress,
-      chainName: v.chainName
+      chainName: v.chainName,
+      isAutoFarmVault: v.isAutoFarmVault
     })));
     
     return data;
@@ -33,6 +40,24 @@ export async function fetchVaults(category = 'ALL_VAULT', userAddress?: string):
     console.error('Error fetching vaults:', error);
     throw error;
   }
+}
+
+export async function fetchAllVaults(): Promise<VaultResponse> {
+  const [sharedResponse, autoFarmResponse] = await Promise.all([
+    fetchVaults({ isAutoFarmVault: false }),
+    fetchVaults({ isAutoFarmVault: true }),
+  ]);
+
+  return {
+    data: [...sharedResponse.data, ...autoFarmResponse.data],
+    pagination: {
+      totalData: sharedResponse.pagination.totalData + autoFarmResponse.pagination.totalData,
+      totalPage: 1,
+      page: 1,
+      perPage: 2000,
+    },
+    stats: sharedResponse.stats,
+  };
 }
 
 export const formatNumber = (num: number, digits = 2): string => {

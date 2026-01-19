@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useBuilderMetrics } from '@/hooks/useBuilderData';
-import { fetchVaults } from '@/services/api';
+import { fetchAllVaults } from '@/services/api';
 import { Vault } from '@/types/vault';
 
 import DiscoverVaultsTab from './DiscoverVaultsTab';
@@ -37,7 +37,7 @@ const Index = () => {
     const loadVaults = async () => {
       try {
         setLoading(true);
-        const response = await fetchVaults();
+        const response = await fetchAllVaults();
         setVaults(response.data);
         toast({
           title: "Vaults loaded successfully",

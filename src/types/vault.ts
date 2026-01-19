@@ -86,7 +86,10 @@ export interface Vault {
   userPerformance: UserPerformance;
   earning24h: number;
   earning30d: number;
+  isAutoFarmVault?: boolean;
 }
+
+export type VaultType = 'shared' | 'autofarm';
 
 export interface VaultResponse {
   data: Vault[];
@@ -159,7 +162,9 @@ export enum SortField {
   APR = 'apr',
   PNL = 'pnl',
   FEE_REBATE = 'feeRebate',
-  OWNER = 'owner'
+  OWNER = 'owner',
+  RISK = 'risk',
+  DAILY_YIELD = 'dailyYield'
 }
 
 export interface SortOptions {

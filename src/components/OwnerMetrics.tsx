@@ -11,9 +11,10 @@ interface OwnerMetricsProps {
   metrics: BuilderMetrics;
   rank?: number;
   vaults?: Vault[];
+  isAutoFarm?: boolean;
 }
 
-const OwnerMetrics = ({ metrics, rank, vaults = [] }: OwnerMetricsProps) => {
+const OwnerMetrics = ({ metrics, rank, vaults = [], isAutoFarm = false }: OwnerMetricsProps) => {
   const { toast } = useToast();
   
   const getExpertiseTag = () => {
@@ -75,7 +76,8 @@ const OwnerMetrics = ({ metrics, rank, vaults = [] }: OwnerMetricsProps) => {
   };
 
   const handleVaultsClick = () => {
-    window.open(`https://defi.krystal.app/account/${metrics.owner}/positions?tab=Vaults#owned_vaults`, '_blank');
+    const hash = isAutoFarm ? '#auto_farm_vault' : '#owned_vault';
+    window.open(`https://defi.krystal.app/account/${metrics.owner}/positions${hash}`, '_blank');
   };
 
   const getAvatarFallback = () => {
@@ -132,14 +134,18 @@ const OwnerMetrics = ({ metrics, rank, vaults = [] }: OwnerMetricsProps) => {
                   )}
                 </div>
                 <div className="text-sm text-white/60 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  {metrics.totalUsers} users
-                  <span>•</span>
+                  {!isAutoFarm && (
+                    <>
+                      <Users className="w-4 h-4" />
+                      {metrics.totalUsers} users
+                      <span>•</span>
+                    </>
+                  )}
                   <div 
                     onClick={handleVaultsClick}
                     className="flex items-center gap-1 group cursor-pointer rounded-full px-3 py-1 bg-white/5 hover:bg-white/10 transition-colors"
                   >
-                    {metrics.totalVaults} vaults
+                    {metrics.totalVaults} {isAutoFarm ? 'auto-farms' : 'vaults'}
                     <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
@@ -175,13 +181,15 @@ const OwnerMetrics = ({ metrics, rank, vaults = [] }: OwnerMetricsProps) => {
         </div>
       </div>
 
-      <MetricsDistributionCharts
-        riskProfile={metrics.riskProfile}
-        rangeStrategy={metrics.rangeStrategy}
-        tvlStrategyType={metrics.tvlStrategyType}
-        totalVaults={metrics.totalVaults}
-        vaults={vaults}
-      />
+      {!isAutoFarm && (
+        <MetricsDistributionCharts
+          riskProfile={metrics.riskProfile}
+          rangeStrategy={metrics.rangeStrategy}
+          tvlStrategyType={metrics.tvlStrategyType}
+          totalVaults={metrics.totalVaults}
+          vaults={vaults}
+        />
+      )}
     </div>
   );
 };
