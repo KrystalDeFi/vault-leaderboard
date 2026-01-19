@@ -64,8 +64,34 @@ const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange, isAutoFar
                 <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={onSortChange} />
               </th>
               {isAutoFarm && (
-                <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
-                  <SortHeader field={SortField.DAILY_YIELD} label="Daily Yield" sortOptions={sortOptions} onSortChange={onSortChange} />
+                <th className="w-[140px] px-5 py-3 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <span className={`text-sm font-medium ${sortOptions.field === SortField.DAILY_YIELD || sortOptions.field === SortField.DAILY_YIELD_PCT ? 'text-white' : 'text-white/60'}`}>
+                      Daily Yield
+                    </span>
+                    <div className="flex bg-[#1a1a1a] rounded-md overflow-hidden ml-1">
+                      <button
+                        onClick={() => onSortChange(SortField.DAILY_YIELD)}
+                        className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                          sortOptions.field === SortField.DAILY_YIELD
+                            ? 'bg-white text-black'
+                            : 'text-white/60 hover:text-white'
+                        }`}
+                      >
+                        $
+                      </button>
+                      <button
+                        onClick={() => onSortChange(SortField.DAILY_YIELD_PCT)}
+                        className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                          sortOptions.field === SortField.DAILY_YIELD_PCT
+                            ? 'bg-white text-black'
+                            : 'text-white/60 hover:text-white'
+                        }`}
+                      >
+                        %
+                      </button>
+                    </div>
+                  </div>
                 </th>
               )}
               {!isAutoFarm && (

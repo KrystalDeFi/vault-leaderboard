@@ -324,7 +324,14 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
         case SortField.VAULTS:
           return (a.vaultCount - b.vaultCount) * multiplier;
         case SortField.DAILY_YIELD:
+          // Sort by absolute dollar amount
           return (a.dailyYield - b.dailyYield) * multiplier;
+        case SortField.DAILY_YIELD_PCT: {
+          // Sort by percentage for better comparison across different TVL sizes
+          const yieldPctA = a.totalTvl > 0 ? a.dailyYield / a.totalTvl : 0;
+          const yieldPctB = b.totalTvl > 0 ? b.dailyYield / b.totalTvl : 0;
+          return (yieldPctA - yieldPctB) * multiplier;
+        }
         default:
           return (a.feesEarned - b.feesEarned) * multiplier;
       }
@@ -562,12 +569,33 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                     onSortChange={handleSortChange}
                   />
                   {vaultType === 'autofarm' && (
-                    <PerformingHeader
-                      field={SortField.DAILY_YIELD}
-                      label="Daily Yield"
-                      sortOptions={sortOptions}
-                      onSortChange={handleSortChange}
-                    />
+                    <th className="text-right pr-2 py-2 min-w-[120px]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span className="text-xs text-[#999] font-semibold uppercase">Daily Yield</span>
+                        <div className="flex bg-[#1a1a1a] rounded-md overflow-hidden ml-1">
+                          <button
+                            onClick={() => handleSortChange(SortField.DAILY_YIELD)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                              sortOptions.field === SortField.DAILY_YIELD
+                                ? 'bg-white text-black'
+                                : 'text-[#999] hover:text-white'
+                            }`}
+                          >
+                            $
+                          </button>
+                          <button
+                            onClick={() => handleSortChange(SortField.DAILY_YIELD_PCT)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                              sortOptions.field === SortField.DAILY_YIELD_PCT
+                                ? 'bg-white text-black'
+                                : 'text-[#999] hover:text-white'
+                            }`}
+                          >
+                            %
+                          </button>
+                        </div>
+                      </div>
+                    </th>
                   )}
                   {vaultType !== 'autofarm' && (
                     <PerformingHeader
@@ -731,10 +759,34 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                     <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
                   </th>
                   {vaultType === 'autofarm' && (
-                    <th
-                      className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.DAILY_YIELD ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
-                    >
-                      <SortHeader field={SortField.DAILY_YIELD} label="Daily Yield" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                    <th className="text-right text-xs uppercase w-[140px] pr-4">
+                      <div className="flex items-center justify-end gap-1">
+                        <span className={`${sortOptions.field === SortField.DAILY_YIELD || sortOptions.field === SortField.DAILY_YIELD_PCT ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}>
+                          Daily Yield
+                        </span>
+                        <div className="flex bg-[#1a1a1a] rounded-md overflow-hidden ml-1">
+                          <button
+                            onClick={() => handleSortChange(SortField.DAILY_YIELD)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                              sortOptions.field === SortField.DAILY_YIELD
+                                ? 'bg-white text-black'
+                                : 'text-[#999] hover:text-white'
+                            }`}
+                          >
+                            $
+                          </button>
+                          <button
+                            onClick={() => handleSortChange(SortField.DAILY_YIELD_PCT)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                              sortOptions.field === SortField.DAILY_YIELD_PCT
+                                ? 'bg-white text-black'
+                                : 'text-[#999] hover:text-white'
+                            }`}
+                          >
+                            %
+                          </button>
+                        </div>
+                      </div>
                     </th>
                   )}
                   <th
