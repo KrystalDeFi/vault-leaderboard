@@ -1,11 +1,14 @@
 import React, {
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 
 import {
+  Share2,
   Trophy,
   Twitter,
+  Zap,
 } from 'lucide-react';
 
 import {
@@ -38,6 +41,7 @@ import {
   SortField,
   SortOptions,
   Vault,
+  VaultType,
 } from '@/types/vault';
 
 import ChainBadge from './ChainBadge';
@@ -76,10 +80,22 @@ const formatCreatedTime = (ageInSecond: number) => {
 const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const { migratedVaults, loading: migratedVaultsLoading, error: migratedVaultsError } = useMigratedVaults();
   
+  const [vaultType, setVaultType] = useState<VaultType>("autofarm");
+  
   const [migrateSortOptions, setMigrateSortOptions] = useState<SortOptions>({
     field: SortField.FEE_REBATE,
     direction: 'desc'
   });
+  
+  // Filter vaults based on type
+  const filteredByTypeVaults = useMemo(() => {
+    return vaults.filter(vault => {
+      if (vaultType === 'autofarm') {
+        return vault.isAutoFarmVault === true;
+      }
+      return vault.isAutoFarmVault !== true;
+    });
+  }, [vaults, vaultType]);
 
   // Sort migrated vaults by feeAmountUsd
   const sortedMigratedVaults = useMemo(() => {
@@ -111,6 +127,13 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const [selectedPeriod, setSelectedPeriod] = useState(periodOptions[2].value);
   const [activeTab, setActiveTab] = useState("performing");
   const [challengeTab, setChallengeTab] = useState("all");
+
+  // Switch away from migrate tab when switching to Auto-Farms
+  useEffect(() => {
+    if (vaultType === 'autofarm' && activeTab === 'migrate') {
+      setActiveTab('performing');
+    }
+  }, [vaultType, activeTab]);
   const [sortOptions, setSortOptions] = useState<SortOptions>({
     field: SortField.FEES,
     direction: 'desc'
@@ -148,7 +171,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
   // Filter vaults based on selected period
   const timeFilteredVaults = useMemo(() => {
-    return vaults.filter(vault => {
+    return filteredByTypeVaults.filter(vault => {
       switch (selectedPeriod) {
         case "this-week":
           return vault.ageInSecond <= 604800; // 7 days
@@ -160,7 +183,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
           return true;
       }
     });
-  }, [vaults, selectedPeriod]);
+  }, [filteredByTypeVaults, selectedPeriod]);
 
   // Filter vaults for Farm & Earn Challenge
   const challengeVaults = useMemo(() => {
@@ -172,12 +195,12 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
     const secondsSinceChallengeStart = now - challengeStart;
     const secondsSinceChallengeEnd = now - challengeEnd;
     
-    return vaults.filter(vault => 
+    return filteredByTypeVaults.filter(vault => 
       vault.ageInSecond <= secondsSinceChallengeStart && 
       vault.ageInSecond >= secondsSinceChallengeEnd &&
       vault.allowDeposit === true
     );
-  }, [vaults]);
+  }, [filteredByTypeVaults]);
 
   // Get top 10 vaults by fee earnings
   const topVaultsByFees = useMemo(() => {
@@ -270,11 +293,15 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
         feesEarned: 0,
         totalUsers: 0,
         vaultCount: 0,
+        dailyYield: 0,
+        totalTvl: 0,
       };
 
       existingBuilder.feesEarned += vault.feeGenerated;
       existingBuilder.totalUsers += vault.totalUser;
       existingBuilder.vaultCount += 1;
+      existingBuilder.dailyYield += vault.earning24h || 0;
+      existingBuilder.totalTvl += vault.tvl || 0;
 
       builderMap.set(builder.address, existingBuilder);
     });
@@ -296,6 +323,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
           return (a.totalUsers - b.totalUsers) * multiplier;
         case SortField.VAULTS:
           return (a.vaultCount - b.vaultCount) * multiplier;
+        case SortField.DAILY_YIELD:
+          return (a.dailyYield - b.dailyYield) * multiplier;
         default:
           return (a.feesEarned - b.feesEarned) * multiplier;
       }
@@ -338,7 +367,8 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   const migrateVaultsTotalPages = Math.ceil(sortedMigratedVaults.length / ITEMS_PER_PAGE);
 
   const handleUserRowClick = (address: string) => {
-    window.open(`https://defi.krystal.app/account/${address}/positions?tab=Vaults#owned_vaults`, '_blank');
+    const hash = vaultType === 'autofarm' ? '#auto_farm_vault' : '#owned_vault';
+    window.open(`https://defi.krystal.app/account/${address}/positions${hash}`, '_blank');
   };
 
   const handleVaultRowClick = (vault: Vault) => {
@@ -434,6 +464,38 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
 
   return (
     <section className="w-full max-w-5xl mx-auto py-8">
+      {/* Vault Type Toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex bg-[#0A0A0A] border border-[#1f1f1f] rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setVaultType("autofarm")}
+            className={`
+              flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all
+              ${vaultType === "autofarm"
+                ? "bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-white shadow-lg"
+                : "text-[#999] hover:text-white hover:bg-[#1f1f1f]"
+              }
+            `}
+          >
+            <Zap className="w-4 h-4" />
+            Auto-Farms
+          </button>
+          <button
+            onClick={() => setVaultType("shared")}
+            className={`
+              flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all
+              ${vaultType === "shared"
+                ? "bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg"
+                : "text-[#999] hover:text-white hover:bg-[#1f1f1f]"
+              }
+            `}
+          >
+            <Share2 className="w-4 h-4" />
+            Shared Vaults
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-center justify-between gap-y-6 mb-8">
         <Tabs
           defaultValue="performing"
@@ -449,11 +511,13 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
               Top Performing
             </TabsTrigger>
             <TabsTrigger value="vaults" className="unified-tab min-h-[44px] px-5">
-              Top Vaults
+              {vaultType === 'autofarm' ? 'Top Auto-Farms' : 'Top Vaults'}
             </TabsTrigger>
-            <TabsTrigger value="migrate" className="unified-tab min-h-[44px] px-5">
-              Migrate to Vaults
-            </TabsTrigger>
+            {vaultType !== 'autofarm' && (
+              <TabsTrigger value="migrate" className="unified-tab min-h-[44px] px-5">
+                Migrate to Vaults
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
         <div className="flex-shrink-0 w-full sm:w-auto mt-6 sm:mt-0 sm:ml-auto">
@@ -497,16 +561,26 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                     sortOptions={sortOptions}
                     onSortChange={handleSortChange}
                   />
-                  <PerformingHeader
-                    field={SortField.USERS}
-                    label="Total Users"
-                    helpText={COLUMN_HELP.users}
-                    sortOptions={sortOptions}
-                    onSortChange={handleSortChange}
-                  />
+                  {vaultType === 'autofarm' && (
+                    <PerformingHeader
+                      field={SortField.DAILY_YIELD}
+                      label="Daily Yield"
+                      sortOptions={sortOptions}
+                      onSortChange={handleSortChange}
+                    />
+                  )}
+                  {vaultType !== 'autofarm' && (
+                    <PerformingHeader
+                      field={SortField.USERS}
+                      label="Total Users"
+                      helpText={COLUMN_HELP.users}
+                      sortOptions={sortOptions}
+                      onSortChange={handleSortChange}
+                    />
+                  )}
                   <PerformingHeader
                     field={SortField.VAULTS}
-                    label="Active Vaults"
+                    label={vaultType === 'autofarm' ? 'Auto-Farms' : 'Active Vaults'}
                     sortOptions={sortOptions}
                     onSortChange={handleSortChange}
                   />
@@ -593,9 +667,19 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       <td className="text-right pr-2 py-2 min-w-[100px] font-medium">
                         {formatNumber(user.feesEarned || 0)}
                       </td>
-                      <td className="text-right pr-2 py-2 min-w-[80px] font-medium">
-                        {Math.round(user.totalUsers)}
-                      </td>
+                      {vaultType === 'autofarm' && (
+                        <td className="text-right pr-2 py-2 min-w-[120px] font-medium">
+                          <div className="text-white">{formatNumber(user.dailyYield || 0)}</div>
+                          <div className="text-xs text-[#999]">
+                            ~{user.totalTvl > 0 ? ((user.dailyYield || 0) / user.totalTvl * 100).toFixed(3) : '0.000'}%
+                          </div>
+                        </td>
+                      )}
+                      {vaultType !== 'autofarm' && (
+                        <td className="text-right pr-2 py-2 min-w-[80px] font-medium">
+                          {Math.round(user.totalUsers)}
+                        </td>
+                      )}
                       <td className="text-right pr-6 py-2 min-w-[70px] font-medium">
                         {user.vaultCount}
                       </td>
@@ -624,7 +708,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                     #
                   </th>
                   <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[240px] pl-2">
-                    Vault
+                    {vaultType === 'autofarm' ? 'Auto-Farm' : 'Vault'}
                   </th>
                   <th className="text-left text-xs text-[#999] font-semibold uppercase min-w-[140px] pl-2 py-2">
                     <div className="flex items-center gap-1.5">
@@ -646,21 +730,30 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                   >
                     <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={handleSortChange} />
                   </th>
+                  {vaultType === 'autofarm' && (
+                    <th
+                      className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.DAILY_YIELD ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                    >
+                      <SortHeader field={SortField.DAILY_YIELD} label="Daily Yield" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                    </th>
+                  )}
                   <th
                     className={`text-right text-xs uppercase w-[120px] pr-4 ${sortOptions.field === SortField.TVL ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
                   >
                     <SortHeader field={SortField.TVL} label="TVL" sortOptions={sortOptions} onSortChange={handleSortChange} />
                   </th>
                   <th
-                    className={`text-right text-xs uppercase w-[100px] pr-4 ${sortOptions.field === SortField.APR ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                    className={`text-right text-xs uppercase w-[100px] ${vaultType === 'autofarm' ? 'pr-6' : 'pr-4'} ${sortOptions.field === SortField.APR ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
                   >
                     <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={handleSortChange} />
                   </th>
-                  <th
-                    className={`text-right text-xs uppercase w-[100px] pr-6 ${sortOptions.field === SortField.USERS ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
-                  >
-                    <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
-                  </th>
+                  {vaultType !== 'autofarm' && (
+                    <th
+                      className={`text-right text-xs uppercase w-[100px] pr-6 ${sortOptions.field === SortField.USERS ? 'text-white font-semibold' : 'text-[#999] font-semibold'}`}
+                    >
+                      <SortHeader field={SortField.USERS} label="Users" sortOptions={sortOptions} onSortChange={handleSortChange} />
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -727,14 +820,16 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                         <div className="flex items-center gap-1.5 cursor-pointer"
                           onClick={e => {
                             e.stopPropagation();
-                            window.open(`https://defi.krystal.app/account/${vault.owner.address}/positions?tab=Vaults#owned_vaults`, '_blank');
+                            const hash = vaultType === 'autofarm' ? '#auto_farm_vault' : '#owned_vault';
+                            window.open(`https://defi.krystal.app/account/${vault.owner.address}/positions${hash}`, '_blank');
                           }}
                         >
                           <Avatar 
                             className="w-5 h-5 border border-[#222] bg-[#131313] cursor-pointer"
                             onClick={e => {
                               e.stopPropagation();
-                              window.open(`https://defi.krystal.app/account/${vault.owner.address}/positions?tab=Vaults#owned_vaults`, '_blank');
+                              const hash = vaultType === 'autofarm' ? '#auto_farm_vault' : '#owned_vault';
+                              window.open(`https://defi.krystal.app/account/${vault.owner.address}/positions${hash}`, '_blank');
                             }}
                           >
                             {vault.owner.avatarUrl ? (
@@ -763,15 +858,25 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                       <td className="text-right w-[120px] pr-4 py-2 font-medium">
                         {formatNumber(vault.feeGenerated || 0)}
                       </td>
+                      {vaultType === 'autofarm' && (
+                        <td className="text-right w-[120px] pr-4 py-2 font-medium">
+                          <div className="text-white">{formatNumber(vault.earning24h || 0)}</div>
+                          <div className="text-xs text-[#999]">
+                            ~{vault.tvl > 0 ? ((vault.earning24h || 0) / vault.tvl * 100).toFixed(3) : '0.000'}%
+                          </div>
+                        </td>
+                      )}
                       <td className="text-right w-[120px] pr-4 py-2 font-medium">
                         {formatNumber(vault.tvl || 0)}
                       </td>
-                      <td className="text-right w-[100px] pr-4 py-2 font-medium">
+                      <td className={`text-right w-[100px] ${vaultType === 'autofarm' ? 'pr-6' : 'pr-4'} py-2 font-medium`}>
                         {(vault.apr * 100).toFixed(2)}%
                       </td>
-                      <td className="text-right w-[100px] pr-6 py-2 font-medium">
-                        {Math.round(vault.totalUser)}
-                      </td>
+                      {vaultType !== 'autofarm' && (
+                        <td className="text-right w-[100px] pr-6 py-2 font-medium">
+                          {Math.round(vault.totalUser)}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

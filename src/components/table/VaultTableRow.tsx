@@ -15,9 +15,10 @@ import { Vault } from '@/types/vault';
 interface VaultTableRowProps {
   vault: Vault;
   onVaultClick: (vault: Vault) => void;
+  isAutoFarm?: boolean;
 }
 
-const VaultTableRow = ({ vault, onVaultClick }: VaultTableRowProps) => {
+const VaultTableRow = ({ vault, onVaultClick, isAutoFarm = false }: VaultTableRowProps) => {
   const vaultUrl = `https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`;
 
   return (
@@ -33,9 +34,11 @@ const VaultTableRow = ({ vault, onVaultClick }: VaultTableRowProps) => {
       <td className="w-[120px] px-5 py-3">
         <ChainBadge chainName={vault.chainName} chainLogo={vault.chainLogo} />
       </td>
-      <td className="w-[120px] px-5 py-3">
-        <TokenIcon token={vault.principalToken} size="sm" showSymbol={true} />
-      </td>
+      {!isAutoFarm && (
+        <td className="w-[120px] px-5 py-3">
+          <TokenIcon token={vault.principalToken} size="sm" showSymbol={true} />
+        </td>
+      )}
       <td className="w-[100px] px-5 py-3 text-right font-semibold text-base text-white">
         {formatPercentage(vault.apr)}
       </td>
@@ -51,19 +54,31 @@ const VaultTableRow = ({ vault, onVaultClick }: VaultTableRowProps) => {
       <td className="w-[120px] px-5 py-3 text-right font-semibold text-base text-white">
         {formatNumber(vault.feeGenerated)}
       </td>
-      <td className="w-[120px] px-5 py-3">
-        <StrategyBadge 
-          strategy={vault.rangeStrategyType} 
-          className="bg-white/5 text-violet-300" 
-        />
-      </td>
-      <td className="w-[100px] px-5 py-3 text-center">
-        <RiskBadge 
-          risk={vault.riskScore} 
-          className="bg-white/5" 
-          showIcon={false}
-        />
-      </td>
+      {isAutoFarm && (
+        <td className="w-[120px] px-5 py-3 text-right">
+          <div className="font-semibold text-base text-white">{formatNumber(vault.earning24h || 0)}</div>
+          <div className="text-xs text-[#999]">
+            ~{vault.tvl > 0 ? ((vault.earning24h || 0) / vault.tvl * 100).toFixed(3) : '0.000'}%
+          </div>
+        </td>
+      )}
+      {!isAutoFarm && (
+        <td className="w-[120px] px-5 py-3">
+          <StrategyBadge 
+            strategy={vault.rangeStrategyType} 
+            className="bg-white/5 text-violet-300" 
+          />
+        </td>
+      )}
+      {!isAutoFarm && (
+        <td className="w-[100px] px-5 py-3 text-center">
+          <RiskBadge 
+            risk={vault.riskScore} 
+            className="bg-white/5" 
+            showIcon={false}
+          />
+        </td>
+      )}
       <td className="w-[140px] px-5 py-3 font-medium text-white/60">
         {shortenAddress(vault.owner.address)}
       </td>

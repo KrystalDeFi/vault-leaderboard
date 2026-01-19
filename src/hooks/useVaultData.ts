@@ -108,6 +108,10 @@ export function useFilteredAndSortedVaults(
           valueA = a.totalUser || 0;
           valueB = b.totalUser || 0;
           break;
+        case SortField.DAILY_YIELD:
+          valueA = a.earning24h || 0;
+          valueB = b.earning24h || 0;
+          break;
         default:
           valueA = a.apr || 0;
           valueB = b.apr || 0;

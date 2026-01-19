@@ -15,11 +15,12 @@ interface VaultTableProps {
   onVaultClick: (vault: Vault) => void;
   sortOptions: SortOptions;
   onSortChange: (field: SortField) => void;
+  isAutoFarm?: boolean;
 }
 
 const ITEMS_PER_PAGE = 10;
 
-const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTableProps) => {
+const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange, isAutoFarm = false }: VaultTableProps) => {
   const [currentPage, setCurrentPage] = React.useState(1);
 
   // Reset pagination when vaults data or sort options change
@@ -43,9 +44,13 @@ const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTa
         <table className="w-full text-sm">
           <thead className="bg-[#121212]">
             <tr>
-              <th className="w-[200px] px-5 py-3 text-left font-medium text-sm text-white/60">Vault</th>
+              <th className="w-[200px] px-5 py-3 text-left font-medium text-sm text-white/60">
+                {isAutoFarm ? 'Auto-Farm' : 'Vault'}
+              </th>
               <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Chain</th>
-              <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Principal</th>
+              {!isAutoFarm && (
+                <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Principal</th>
+              )}
               <th className="w-[100px] px-5 py-3 text-right font-medium text-sm text-white/60">
                 <SortHeader field={SortField.APR} label="APR" sortOptions={sortOptions} onSortChange={onSortChange} />
               </th>
@@ -58,10 +63,17 @@ const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTa
               <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
                 <SortHeader field={SortField.FEES} label="Fees" sortOptions={sortOptions} onSortChange={onSortChange} />
               </th>
-              <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Strategy</th>
-              <th className="w-[100px] px-5 py-3 text-center font-medium text-sm text-white/60">
-                <SortHeader field={SortField.RISK} label="Risk" sortOptions={sortOptions} onSortChange={onSortChange} />
-              </th>
+              {isAutoFarm && (
+                <th className="w-[120px] px-5 py-3 text-right font-medium text-sm text-white/60">
+                  <SortHeader field={SortField.DAILY_YIELD} label="Daily Yield" sortOptions={sortOptions} onSortChange={onSortChange} />
+                </th>
+              )}
+              {!isAutoFarm && (
+                <th className="w-[120px] px-5 py-3 text-left font-medium text-sm text-white/60">Strategy</th>
+              )}
+              {!isAutoFarm && (
+                <th className="w-[100px] px-5 py-3 text-center font-medium text-sm text-white/60">Risk</th>
+              )}
               <th className="w-[140px] px-5 py-3 text-left font-medium text-sm text-white/60">Owner</th>
             </tr>
           </thead>
@@ -70,7 +82,8 @@ const VaultTable = ({ vaults, onVaultClick, sortOptions, onSortChange }: VaultTa
               <VaultTableRow 
                 key={`${vault.chainId}-${vault.vaultAddress}`}
                 vault={vault} 
-                onVaultClick={onVaultClick} 
+                onVaultClick={onVaultClick}
+                isAutoFarm={isAutoFarm}
               />
             ))}
           </tbody>

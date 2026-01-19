@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Share2, Zap } from 'lucide-react';
 
 import FilterBar from '@/components/FilterBar';
 import {
@@ -27,6 +27,7 @@ import {
   SortField,
   SortOptions,
   Vault,
+  VaultType,
 } from '@/types/vault';
 
 const CARDS_PER_PAGE = 9;
@@ -37,6 +38,7 @@ interface DiscoverVaultsTabProps {
 }
 
 const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }) => {
+  const [vaultType, setVaultType] = useState<VaultType>("autofarm");
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     principalToken: null,
@@ -55,11 +57,33 @@ const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }
   });
   const [cardsCurrentPage, setCardsCurrentPage] = useState<number>(1);
 
+  // Clear certain filters when switching to Auto-Farms
+  useEffect(() => {
+    if (vaultType === 'autofarm') {
+      setFilterOptions(prev => ({
+        ...prev,
+        principalToken: null,
+        riskLevel: null,
+        rangeStrategy: null,
+      }));
+    }
+  }, [vaultType]);
+
+  // Filter vaults by type first
+  const vaultsFilteredByType = useMemo(() => {
+    return vaults.filter(vault => {
+      if (vaultType === 'autofarm') {
+        return vault.isAutoFarmVault === true;
+      }
+      return vault.isAutoFarmVault !== true;
+    });
+  }, [vaults, vaultType]);
+
   const handleFilterOptionsChange = (newFilters: FilterOptions) => {
     setFilterOptions(newFilters);
   };
 
-  const filteredVaults = useFilteredAndSortedVaults(vaults, filterOptions, sortOptions);
+  const filteredVaults = useFilteredAndSortedVaults(vaultsFilteredByType, filterOptions, sortOptions);
 
   const paginatedVaultsForCards = React.useMemo(() => {
     const start = (cardsCurrentPage - 1) * CARDS_PER_PAGE;
@@ -70,20 +94,53 @@ const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }
   const totalPagesCards = Math.ceil(filteredVaults.length / CARDS_PER_PAGE);
 
   const handleVaultClick = (vault: Vault) => {
-    window.open(`/vault/${vault.chainId}/${vault.vaultAddress}`, '_blank');
+    window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
   };
 
   const handleJoinClick = (vault: Vault, e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`/vault/${vault.chainId}/${vault.vaultAddress}/join`, '_blank');
+    window.open(`https://defi.krystal.app/vaults/${vault.chainId}/${vault.vaultAddress}`, '_blank');
   };
 
   return (
     <div className="font-inter max-w-[1200px] mx-auto min-h-[calc(100vh-200px)] flex flex-col">
+      {/* Vault Type Toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex bg-[#0A0A0A] border border-[#1f1f1f] rounded-xl p-1 gap-1">
+          <button
+            onClick={() => setVaultType("autofarm")}
+            className={`
+              flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all
+              ${vaultType === "autofarm"
+                ? "bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-white shadow-lg"
+                : "text-[#999] hover:text-white hover:bg-[#1f1f1f]"
+              }
+            `}
+          >
+            <Zap className="w-4 h-4" />
+            Auto-Farms
+          </button>
+          <button
+            onClick={() => setVaultType("shared")}
+            className={`
+              flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all
+              ${vaultType === "shared"
+                ? "bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg"
+                : "text-[#999] hover:text-white hover:bg-[#1f1f1f]"
+              }
+            `}
+          >
+            <Share2 className="w-4 h-4" />
+            Shared Vaults
+          </button>
+        </div>
+      </div>
+
       <FilterBar
         filterOptions={filterOptions}
         onFilterChange={handleFilterOptionsChange}
         className="mx-auto max-w-2xl w-full mb-8"
+        isAutoFarm={vaultType === 'autofarm'}
       />
       
       <div className="flex justify-end mb-4">
@@ -142,6 +199,7 @@ const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }
                   vault={vault}
                   onClick={() => handleVaultClick(vault)}
                   onJoinClick={(e) => handleJoinClick(vault, e)}
+                  isAutoFarm={vaultType === 'autofarm'}
                 />
               ))}
             </div>
@@ -216,6 +274,7 @@ const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }
                 direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc',
               }))
             }
+            isAutoFarm={vaultType === 'autofarm'}
           />
         )}
       </div>

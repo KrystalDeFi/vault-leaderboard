@@ -38,7 +38,7 @@ const VaultDetailModal = ({ vault, open, onOpenChange }: VaultDetailModalProps) 
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
-            {calculateDaysAgo(vault.ageInSeconds)}
+            {calculateDaysAgo(vault.ageInSecond)}
             <Users className="w-4 h-4 ml-2" />
             {vault.totalUser} users
           </div>
