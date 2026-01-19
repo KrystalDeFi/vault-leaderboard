@@ -109,8 +109,14 @@ export function useFilteredAndSortedVaults(
           valueB = b.totalUser || 0;
           break;
         case SortField.DAILY_YIELD:
+          // Sort by absolute dollar amount
           valueA = a.earning24h || 0;
           valueB = b.earning24h || 0;
+          break;
+        case SortField.DAILY_YIELD_PCT:
+          // Sort by percentage (earning24h / tvl) for better comparison across different TVL sizes
+          valueA = a.tvl > 0 ? (a.earning24h || 0) / a.tvl : 0;
+          valueB = b.tvl > 0 ? (b.earning24h || 0) / b.tvl : 0;
           break;
         default:
           valueA = a.apr || 0;

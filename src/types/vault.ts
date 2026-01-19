@@ -164,7 +164,8 @@ export enum SortField {
   FEE_REBATE = 'feeRebate',
   OWNER = 'owner',
   RISK = 'risk',
-  DAILY_YIELD = 'dailyYield'
+  DAILY_YIELD = 'dailyYield',
+  DAILY_YIELD_PCT = 'dailyYieldPct'
 }
 
 export interface SortOptions {
