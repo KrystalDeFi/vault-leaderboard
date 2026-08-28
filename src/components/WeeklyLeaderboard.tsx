@@ -34,6 +34,7 @@ import { useMigratedVaults } from '@/hooks/useMigratedVaults';
 import { useFilteredAndSortedVaults } from '@/hooks/useVaultData';
 import {
   formatNumber,
+  isAutoFarmVault,
   shortenAddress,
 } from '@/services/api';
 import {
@@ -90,10 +91,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   // Filter vaults based on type
   const filteredByTypeVaults = useMemo(() => {
     return vaults.filter(vault => {
-      if (vaultType === 'autofarm') {
-        return vault.isAutoFarmVault === true;
-      }
-      return vault.isAutoFarmVault !== true;
+      return vaultType === 'autofarm' ? isAutoFarmVault(vault) : !isAutoFarmVault(vault);
     });
   }, [vaults, vaultType]);
 

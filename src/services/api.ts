@@ -1,15 +1,22 @@
-import { VaultResponse } from '../types/vault';
+import { ApiVaultType, Vault, VaultResponse } from '../types/vault';
 
 export const API_BASE_URL = 'https://api.krystal.app/all/v1/vaults';
 
 type FetchVaultsOptions = {
   category?: string;
   userAddress?: string;
-  isAutoFarmVault?: boolean;
+  vaultTypes?: ApiVaultType[];
 };
 
+export const SHARED_VAULT_TYPES: ApiVaultType[] = ['sharevault', 'vaultx'];
+export const AUTO_FARM_VAULT_TYPES: ApiVaultType[] = ['autofarm'];
+
+/** Auto-farm vs shared (sharevault + vaultx), preferring the API's vaultType field. */
+export const isAutoFarmVault = (vault: Vault): boolean =>
+  vault.vaultType ? vault.vaultType === 'autofarm' : vault.isAutoFarmVault === true;
+
 export async function fetchVaults(options: FetchVaultsOptions = {}): Promise<VaultResponse> {
-  const { category = 'ALL_VAULT', userAddress, isAutoFarmVault } = options;
+  const { category = 'ALL_VAULT', userAddress, vaultTypes } = options;
   
   try {
     const queryParams = new URLSearchParams({
@@ -17,8 +24,8 @@ export async function fetchVaults(options: FetchVaultsOptions = {}): Promise<Vau
       category: category
     });
     if (userAddress) queryParams.set('userAddress', userAddress);
-    if (isAutoFarmVault !== undefined) {
-      queryParams.set('isAutoFarmVault', String(isAutoFarmVault));
+    if (vaultTypes?.length) {
+      queryParams.set('vaultTypes', vaultTypes.join(','));
     }
 
     const response = await fetch(`${API_BASE_URL}?${queryParams}`);
@@ -32,6 +39,7 @@ export async function fetchVaults(options: FetchVaultsOptions = {}): Promise<Vau
       chainId: v.chainId,
       vaultAddress: v.vaultAddress,
       chainName: v.chainName,
+      vaultType: v.vaultType,
       isAutoFarmVault: v.isAutoFarmVault
     })));
     
@@ -44,8 +52,8 @@ export async function fetchVaults(options: FetchVaultsOptions = {}): Promise<Vau
 
 export async function fetchAllVaults(): Promise<VaultResponse> {
   const [sharedResponse, autoFarmResponse] = await Promise.all([
-    fetchVaults({ isAutoFarmVault: false }),
-    fetchVaults({ isAutoFarmVault: true }),
+    fetchVaults({ vaultTypes: SHARED_VAULT_TYPES }),
+    fetchVaults({ vaultTypes: AUTO_FARM_VAULT_TYPES }),
   ]);
 
   return {

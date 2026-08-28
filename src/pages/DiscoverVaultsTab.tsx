@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { HelpCircle, Share2, Zap } from 'lucide-react';
 
 import FilterBar from '@/components/FilterBar';
+import { isAutoFarmVault } from '@/services/api';
 import {
   Pagination,
   PaginationContent,
@@ -72,10 +73,7 @@ const DiscoverVaultsTab: React.FC<DiscoverVaultsTabProps> = ({ vaults, loading }
   // Filter vaults by type first
   const vaultsFilteredByType = useMemo(() => {
     return vaults.filter(vault => {
-      if (vaultType === 'autofarm') {
-        return vault.isAutoFarmVault === true;
-      }
-      return vault.isAutoFarmVault !== true;
+      return vaultType === 'autofarm' ? isAutoFarmVault(vault) : !isAutoFarmVault(vault);
     });
   }, [vaults, vaultType]);
 
