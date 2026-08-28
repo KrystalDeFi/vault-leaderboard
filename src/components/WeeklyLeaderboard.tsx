@@ -894,9 +894,11 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                             <span className="font-medium text-[#fff] text-sm truncate font-inter">
                               {vault.owner?.twitterUsername || shortenAddress(vault.owner.address)}
                             </span>
-                            <span className="text-[10px] text-[#999] font-mono truncate">
-                              {shortenAddress(vault.owner.address)}
-                            </span>
+                            {vault.owner?.twitterUsername && (
+                              <span className="text-[10px] text-[#999] font-mono truncate">
+                                {shortenAddress(vault.owner.address)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -1060,9 +1062,11 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                               <span className="font-medium text-[#fff] text-sm truncate font-inter">
                                 {vault.owner?.twitterUsername || shortenAddress(vault.ownerAddress)}
                               </span>
-                              <span className="text-[10px] text-[#999] font-mono truncate">
-                                {shortenAddress(vault.ownerAddress)}
-                              </span>
+                              {vault.owner?.twitterUsername && (
+                                <span className="text-[10px] text-[#999] font-mono truncate">
+                                  {shortenAddress(vault.ownerAddress)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
