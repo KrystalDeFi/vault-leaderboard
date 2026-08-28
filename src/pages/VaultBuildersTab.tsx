@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BuilderMetrics, Vault, VaultType } from '@/types/vault';
+import { isAutoFarmVault } from '@/services/api';
 import OwnerMetrics from '@/components/OwnerMetrics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HelpCircle, Share2, Zap } from 'lucide-react';
@@ -37,10 +38,7 @@ const VaultBuildersTab: React.FC<VaultBuildersTabProps> = ({ buildersMetrics, va
   // Filter vaults by type
   const filteredVaults = useMemo(() => {
     return vaults.filter(vault => {
-      if (vaultType === 'autofarm') {
-        return vault.isAutoFarmVault === true;
-      }
-      return vault.isAutoFarmVault !== true;
+      return vaultType === 'autofarm' ? isAutoFarmVault(vault) : !isAutoFarmVault(vault);
     });
   }, [vaults, vaultType]);
 

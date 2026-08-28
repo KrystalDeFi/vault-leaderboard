@@ -86,8 +86,12 @@ export interface Vault {
   userPerformance: UserPerformance;
   earning24h: number;
   earning30d: number;
+  vaultType?: ApiVaultType;
   isAutoFarmVault?: boolean;
 }
+
+/** Vault type as returned by the API's `vaultTypes` filter. */
+export type ApiVaultType = 'sharevault' | 'vaultx' | 'autofarm';
 
 export type VaultType = 'shared' | 'autofarm';
 

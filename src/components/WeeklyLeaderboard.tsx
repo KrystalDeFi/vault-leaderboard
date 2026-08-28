@@ -34,6 +34,7 @@ import { useMigratedVaults } from '@/hooks/useMigratedVaults';
 import { useFilteredAndSortedVaults } from '@/hooks/useVaultData';
 import {
   formatNumber,
+  isAutoFarmVault,
   shortenAddress,
 } from '@/services/api';
 import {
@@ -90,10 +91,7 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
   // Filter vaults based on type
   const filteredByTypeVaults = useMemo(() => {
     return vaults.filter(vault => {
-      if (vaultType === 'autofarm') {
-        return vault.isAutoFarmVault === true;
-      }
-      return vault.isAutoFarmVault !== true;
+      return vaultType === 'autofarm' ? isAutoFarmVault(vault) : !isAutoFarmVault(vault);
     });
   }, [vaults, vaultType]);
 
@@ -896,9 +894,11 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                             <span className="font-medium text-[#fff] text-sm truncate font-inter">
                               {vault.owner?.twitterUsername || shortenAddress(vault.owner.address)}
                             </span>
-                            <span className="text-[10px] text-[#999] font-mono truncate">
-                              {shortenAddress(vault.owner.address)}
-                            </span>
+                            {vault.owner?.twitterUsername && (
+                              <span className="text-[10px] text-[#999] font-mono truncate">
+                                {shortenAddress(vault.owner.address)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -1062,9 +1062,11 @@ const WeeklyLeaderboard = ({ vaults, loading }: WeeklyLeaderboardProps) => {
                               <span className="font-medium text-[#fff] text-sm truncate font-inter">
                                 {vault.owner?.twitterUsername || shortenAddress(vault.ownerAddress)}
                               </span>
-                              <span className="text-[10px] text-[#999] font-mono truncate">
-                                {shortenAddress(vault.ownerAddress)}
-                              </span>
+                              {vault.owner?.twitterUsername && (
+                                <span className="text-[10px] text-[#999] font-mono truncate">
+                                  {shortenAddress(vault.ownerAddress)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
